@@ -1,0 +1,20 @@
+{
+  "name": "ondemandenv-client",
+  "version": "0.1.0",
+  "description": "Client library for OnDemandEnv",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "jest",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "ondemandenv-base-contracts": "latest"
+  },
+  "devDependencies": {
+    "typescript": "^4.0.0",
+    "@types/node": "^14.0.0",
+    "jest": "^26.0.0",
+    "ts-jest": "^26.0.0",
+    "@types/jest": "^26.0.0"
+  }
+}
