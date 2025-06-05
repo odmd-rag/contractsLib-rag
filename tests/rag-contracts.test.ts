@@ -1,5 +1,5 @@
 import { App } from 'aws-cdk-lib';
-import { RagContracts } from '../src/rag-contracts';
+import { RagContracts } from '../src';
 
 describe('RagContracts', () => {
     let app: App;
