@@ -1,0 +1,74 @@
+{
+  "name": "@contractslib/rag-contracts",
+  "version": "1.0.0",
+  "description": "RAG System Contracts Library for OndemandEnv Platform",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf lib/",
+    "clean:win": "if exist lib rmdir /s /q lib",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "start": "node lib/app.js",
+    "package": "npm run build && npm pack",
+    "ci:build": "bash scripts/build.sh",
+    "prepare": "npm run build"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/tests"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.ts",
+      "**/?(*.)+(spec|test).ts"
+    ],
+    "transform": {
+      "^.+\\.ts$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "src/**/*.ts",
+      "!src/**/*.d.ts",
+      "!src/app.ts"
+    ],
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ]
+  },
+  "dependencies": {
+    "@ondemandenv/contracts-lib-base": "0.0.69",
+    "aws-cdk-lib": "^2.100.0",
+    "constructs": "^10.0.0",
+    "source-map-support": "^0.5.21"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.5.0",
+    "@typescript-eslint/eslint-plugin": "^6.4.0",
+    "@typescript-eslint/parser": "^6.4.0",
+    "eslint": "^8.47.0",
+    "jest": "^29.7.0",
+    "rimraf": "^5.0.0",
+    "ts-jest": "^29.3.4",
+    "typescript": "^5.1.6"
+  },
+  "keywords": [
+    "rag",
+    "contracts",
+    "ondemandenv",
+    "aws",
+    "serverless",
+    "cdk"
+  ],
+  "author": "OndemandEnv Platform",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/odmd-rag/contractsLib-rag.git"
+  }
+}
