@@ -1,32 +1,31 @@
-import { Construct } from 'constructs';
-import { App } from 'aws-cdk-lib';
-import { OndemandContracts, OdmdBuildContractsLib, OdmdBuildNetworking, GithubRepo } from "@ondemandenv/contracts-lib-base";
+import {App} from 'aws-cdk-lib';
+import {OndemandContracts, OdmdBuildNetworking} from "@ondemandenv/contracts-lib-base";
 
 // Import types
-import type { AccountsRag, GithubReposRag } from "./types";
+import type {AccountsRag, GithubReposRag} from "./types";
 
 // Import service classes
-import { RagDocumentIngestionBuild } from "./services/document-ingestion";
-import { RagDocumentProcessingBuild } from "./services/document-processing";
-import { RagEmbeddingBuild } from "./services/embedding";
-import { RagVectorStorageBuild } from "./services/vector-storage";
-import { RagKnowledgeRetrievalBuild } from "./services/knowledge-retrieval";
-import { RagGenerationBuild } from "./services/generation";
+import {RagDocumentIngestionBuild} from "./services/document-ingestion";
+import {RagDocumentProcessingBuild} from "./services/document-processing";
+import {RagEmbeddingBuild} from "./services/embedding";
+import {RagVectorStorageBuild} from "./services/vector-storage";
+import {RagKnowledgeRetrievalBuild} from "./services/knowledge-retrieval";
+import {RagGenerationBuild} from "./services/generation";
 
 // Import contracts build
-import { OdmdBuildContractsRag } from "./contracts-build";
+import {OdmdBuildContractsRag} from "./contracts-build";
 
 /**
  * Main RAG Contracts class extending OndemandContracts
  * Implements the singleton pattern for consistent contract access
  */
 export class RagContracts extends OndemandContracts<AccountsRag, GithubReposRag, OdmdBuildContractsRag> {
-    
+
     /**
      * Singleton instance
      */
     private static _inst: RagContracts;
-    
+
     /**
      * Get singleton instance of RagContracts
      */
@@ -39,12 +38,12 @@ export class RagContracts extends OndemandContracts<AccountsRag, GithubReposRag,
      */
     constructor(app: App) {
         super(app, 'RagContracts');
-        
+
         if (RagContracts._inst) {
             throw new Error('RagContracts is a singleton - not allowed to create multiple instances');
         }
         RagContracts._inst = this;
-        
+
         // Initialize all service builds
         this.ragDocumentIngestionBuild = new RagDocumentIngestionBuild(this);
         this.ragDocumentProcessingBuild = new RagDocumentProcessingBuild(this);
