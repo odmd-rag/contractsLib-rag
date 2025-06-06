@@ -14,11 +14,11 @@ export class OdmdBuildContractsRag extends OdmdBuildContractsLib<AccountsRag, Gi
     ownerEmail?: string | undefined;
 
     public get packageName(): string {
-        return '@contractslib/rag-contracts';
+        return '@odmd-rag/contracts-lib-rag';
     }
 
     get pkgOrg(): string {
-        return '@contractslib';
+        return '@odmd-rag';
     }
 
     constructor(scope: RagContracts) {

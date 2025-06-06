@@ -1,5 +1,6 @@
 import { App } from 'aws-cdk-lib';
 import { RagContracts } from '../src';
+import * as packageJson from '../package.json';
 
 describe('RagContracts', () => {
     let app: App;
@@ -243,5 +244,21 @@ describe('RagContracts', () => {
         // Generation consumes Knowledge Retrieval API
         const generationDev = ragContracts.ragGenerationBuild.dev;
         expect(generationDev.contextRetrievalSubscription).toBeDefined();
+    });
+
+    test('should have packageName and pkgOrg consistent with package.json', () => {
+        const buildContracts = ragContracts.contractsLibBuild;
+        
+        // Extract package name and organization from package.json
+        const expectedPackageName = packageJson.name;
+        const expectedPkgOrg = packageJson.name.split('/')[0];
+        
+        // Check that OdmdBuildContractsLib instance matches package.json
+        expect(buildContracts.packageName).toBe(expectedPackageName);
+        expect(buildContracts.pkgOrg).toBe(expectedPkgOrg);
+        
+        // Validate the expected values are what we expect
+        expect(expectedPackageName).toBe('@odmd-rag/contracts-lib-rag');
+        expect(expectedPkgOrg).toBe('@odmd-rag');
     });
 }); 
