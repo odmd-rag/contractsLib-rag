@@ -11,6 +11,7 @@ import {RagEmbeddingBuild} from "./services/embedding";
 import {RagVectorStorageBuild} from "./services/vector-storage";
 import {RagKnowledgeRetrievalBuild} from "./services/knowledge-retrieval";
 import {RagGenerationBuild} from "./services/generation";
+import {RagUserAuthBuild, RagUserAuthEnver} from "./services/user-auth";
 
 // Import contracts build
 import {OdmdBuildContractsRag} from "./contracts-build";
@@ -81,6 +82,14 @@ export class RagContracts extends OndemandContracts<AccountsRag, GithubReposRag,
         if (!buildRegion || !buildAccount) {
             throw new Error("buildRegion>" + buildRegion + "; buildAccount>" + buildAccount);
         }
+
+        // Wire all consuming relationships
+        this.ragDocumentIngestionBuild.wireConsuming();
+        (this.userAuth!.envers[0] as RagUserAuthEnver).wireConsuming();
+
+        this.odmdBuilds.forEach(build => {
+            console.log(build.buildId)
+        })
     }
 
     createContractsLibBuild(): OdmdBuildContractsRag {
@@ -88,8 +97,7 @@ export class RagContracts extends OndemandContracts<AccountsRag, GithubReposRag,
     }
 
     protected initializeUserAuth() {
-        // RAG system doesn't need separate user auth - using platform default
-        this._userAuth = undefined;
+        this._userAuth = new RagUserAuthBuild(this);
     }
 
     protected initializeEksCluster() {

@@ -1,6 +1,6 @@
 {
   "name": "@odmd-rag/contracts-lib-rag",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "RAG System Contracts Library for OndemandEnv Platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -8,37 +8,19 @@
     "build": "tsc",
     "clean": "rimraf dist/",
     "clean:win": "if exist dist rmdir /s /q dist",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "debug": "npx jest --testPathPattern=debug-envers.test.ts --runInBand --forceExit",
+    "test": "npm run test:isolated",
+    "test:isolated": "npm run test:singleton && npm run test:structure && npm run test:schemas && npm run test:dependencies && npm run test:package",
+    "test:singleton": "jest --testPathPattern=rag-contracts-singleton.test.ts --runInBand --forceExit",
+    "test:singleton-mocked": "jest --testPathPattern=rag-contracts-singleton-with-mocks.test.ts --runInBand --forceExit",
+    "test:structure": "jest --testPathPattern=rag-contracts-structure.test.ts --runInBand --forceExit",
+    "test:schemas": "jest --testPathPattern=rag-contracts-schemas.test.ts --runInBand --forceExit", 
+    "test:dependencies": "jest --testPathPattern=rag-contracts-dependencies.test.ts --runInBand --forceExit",
+    "test:package": "jest --testPathPattern=rag-contracts-package.test.ts --runInBand --forceExit",
     "start": "node lib/app.js",
     "package": "npm run build && npm pack",
     "ci:build": "bash scripts/build.sh",
     "prepare": "npm run build"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node",
-    "roots": [
-      "<rootDir>/tests"
-    ],
-    "testMatch": [
-      "**/__tests__/**/*.ts",
-      "**/?(*.)+(spec|test).ts"
-    ],
-    "transform": {
-      "^.+\\.ts$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "src/**/*.ts",
-      "!src/**/*.d.ts",
-      "!src/app.ts"
-    ],
-    "coverageReporters": [
-      "text",
-      "lcov",
-      "html"
-    ]
   },
   "dependencies": {
     "@ondemandenv/contracts-lib-base": "0.0.69",

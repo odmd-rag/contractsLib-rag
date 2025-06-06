@@ -1,6 +1,7 @@
 import { Construct } from 'constructs';
-import { OdmdBuild, OdmdEnverCdk, SRC_Rev_REF, OdmdCrossRefProducer } from '@ondemandenv/contracts-lib-base';
+import { OdmdBuild, OdmdEnverCdk, SRC_Rev_REF, OdmdCrossRefProducer, OdmdCrossRefConsumer } from '@ondemandenv/contracts-lib-base';
 import type { RagContracts } from "../rag-contracts";
+import { RagUserAuthEnver } from "./user-auth";
 
 /**
  * Document Validation Event Producer (EventBridge)
@@ -64,9 +65,41 @@ export class RagDocumentIngestionEnver extends OdmdEnverCdk {
         
         // Initialize EventBridge producer for document validation events
         this.documentValidationEvents = new DocumentValidationEventProducer(this, 'doc-validation-events');
+        
+        // Initialize auth callback URLs for user-auth service to consume
+        this.authCallbackUrl = new OdmdCrossRefProducer(this, 'auth-callback-url');
+        this.logoutUrl = new OdmdCrossRefProducer(this, 'logout-url');
+        
+        // Initialize consumption of user-auth identity provider details
+        this.authProviderClientId = [];
+        this.authProviderName = [];
     }
 
     readonly documentValidationEvents: DocumentValidationEventProducer;
+    
+    // Auth callback URLs produced for user-auth service to consume
+    readonly authCallbackUrl: OdmdCrossRefProducer<RagDocumentIngestionEnver>;
+    readonly logoutUrl: OdmdCrossRefProducer<RagDocumentIngestionEnver>;
+    
+    // Consuming user-auth identity provider details for document authentication
+    readonly authProviderClientId: OdmdCrossRefConsumer<this, any>[];
+    readonly authProviderName: OdmdCrossRefConsumer<this, any>[];
+    
+    wireConsuming() {
+        // Wire consumption from user-auth service for authentication
+        const ragContracts = this.owner.contracts as RagContracts;
+        const userAuthEnver = ragContracts.userAuth!.envers[0] as RagUserAuthEnver
+        
+        this.authProviderClientId.push(new OdmdCrossRefConsumer(this, userAuthEnver.idProviderClientId.node.id, userAuthEnver.idProviderClientId, {
+            defaultIfAbsent: 'default-client-id',
+            trigger: 'no'
+        }));
+        
+        this.authProviderName.push(new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName, {
+            defaultIfAbsent: 'default-provider-name',
+            trigger: 'no'
+        }));
+    }
 }
 
 /**
@@ -110,6 +143,10 @@ export class RagDocumentIngestionBuild extends OdmdBuild<OdmdEnverCdk> {
 
     get contracts(): RagContracts {
         return super.contracts as RagContracts;
+    }
+    
+    wireConsuming() {
+        this.envers.forEach(e => e.wireConsuming());
     }
 }
 

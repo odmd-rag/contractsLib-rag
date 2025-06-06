@@ -36,4 +36,9 @@ export {
 export {
     RagGenerationBuild,
     RagGenerationEnver
-} from './services/generation'; 
+} from './services/generation';
+
+export {
+    RagUserAuthBuild,
+    RagUserAuthEnver
+} from './services/user-auth'; 
