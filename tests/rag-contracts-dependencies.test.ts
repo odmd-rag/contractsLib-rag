@@ -35,8 +35,6 @@ describe('RagContracts Service Dependencies', () => {
         const docIngestionDev = ragContracts.ragDocumentIngestionBuild.dev;
         expect(docIngestionDev.authProviderClientId).toBeDefined();
         expect(docIngestionDev.authProviderName).toBeDefined();
-        expect(Array.isArray(docIngestionDev.authProviderClientId)).toBe(true);
-        expect(Array.isArray(docIngestionDev.authProviderName)).toBe(true);
         
         // Document Ingestion produces callback/logout URLs for User-Auth to consume
         expect(docIngestionDev.authCallbackUrl).toBeDefined();
@@ -96,8 +94,8 @@ describe('RagContracts Service Dependencies', () => {
         expect(userAuth.userPoolId).toBeDefined();
         
         // Document Ingestion consumes auth details
-        expect(docIngestion.authProviderClientId.length).toBeGreaterThan(0);
-        expect(docIngestion.authProviderName.length).toBeGreaterThan(0);
+        expect(docIngestion.authProviderClientId).toBeDefined()
+        expect(docIngestion.authProviderName).toBeDefined()
         
         // Document Ingestion produces callback URLs
         expect(docIngestion.authCallbackUrl).toBeDefined();

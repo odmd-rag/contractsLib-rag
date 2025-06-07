@@ -69,10 +69,6 @@ export class RagDocumentIngestionEnver extends OdmdEnverCdk {
         // Initialize auth callback URLs for user-auth service to consume
         this.authCallbackUrl = new OdmdCrossRefProducer(this, 'auth-callback-url');
         this.logoutUrl = new OdmdCrossRefProducer(this, 'logout-url');
-        
-        // Initialize consumption of user-auth identity provider details
-        this.authProviderClientId = [];
-        this.authProviderName = [];
     }
 
     readonly documentValidationEvents: DocumentValidationEventProducer;
@@ -81,24 +77,24 @@ export class RagDocumentIngestionEnver extends OdmdEnverCdk {
     readonly authCallbackUrl: OdmdCrossRefProducer<RagDocumentIngestionEnver>;
     readonly logoutUrl: OdmdCrossRefProducer<RagDocumentIngestionEnver>;
     
-    // Consuming user-auth identity provider details for document authentication
-    readonly authProviderClientId: OdmdCrossRefConsumer<this, any>[];
-    readonly authProviderName: OdmdCrossRefConsumer<this, any>[];
+    // Consuming user-auth identity provider details for document authentication (single references since one auth enver)
+    authProviderClientId!: OdmdCrossRefConsumer<this, any>;
+    authProviderName!: OdmdCrossRefConsumer<this, any>;
     
     wireConsuming() {
         // Wire consumption from user-auth service for authentication
         const ragContracts = this.owner.contracts as RagContracts;
         const userAuthEnver = ragContracts.userAuth!.envers[0] as RagUserAuthEnver
         
-        this.authProviderClientId.push(new OdmdCrossRefConsumer(this, userAuthEnver.idProviderClientId.node.id, userAuthEnver.idProviderClientId, {
+        this.authProviderClientId = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderClientId.node.id, userAuthEnver.idProviderClientId, {
             defaultIfAbsent: 'default-client-id',
             trigger: 'no'
-        }));
+        });
         
-        this.authProviderName.push(new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName, {
+        this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName, {
             defaultIfAbsent: 'default-provider-name',
             trigger: 'no'
-        }));
+        });
     }
 }
 
