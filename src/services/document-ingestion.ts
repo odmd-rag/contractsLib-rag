@@ -1,4 +1,3 @@
-import { Construct } from 'constructs';
 import { OdmdBuild, OdmdEnverCdk, SRC_Rev_REF, OdmdCrossRefProducer, OdmdCrossRefConsumer } from '@ondemandenv/contracts-lib-base';
 import type { RagContracts } from "../rag-contracts";
 import { RagUserAuthEnver } from "./user-auth";
@@ -145,27 +144,3 @@ export class RagDocumentIngestionBuild extends OdmdBuild<OdmdEnverCdk> {
         this.envers.forEach(e => e.wireConsuming());
     }
 }
-
-/**
- * Document Ingestion Service Build Configuration
- */
-export class DocumentIngestionBuild {
-  constructor(public props: {
-    githubRepoAlias: string;
-    buildType: string;
-    sourcePath: string;
-  }) {}
-}
-
-/**
- * Document Ingestion Service Enver (Environment)
- */
-export class DocumentIngestionEnver {
-  constructor(public scope: Construct, public id: string, public props: {
-    build: DocumentIngestionBuild;
-    targetAccountAlias: string;
-    targetRegion: string;
-    immutable: boolean;
-    outputsProduct?: any;
-  }) {}
-} 
