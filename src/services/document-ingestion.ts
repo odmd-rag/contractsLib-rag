@@ -1,5 +1,5 @@
 import { OdmdBuild, OdmdEnverCdk, SRC_Rev_REF, OdmdCrossRefProducer, OdmdCrossRefConsumer } from '@ondemandenv/contracts-lib-base';
-import type { RagContracts } from "../rag-contracts";
+import  { RagContracts } from "../rag-contracts";
 import { RagUserAuthEnver } from "./user-auth";
 
 /**
@@ -94,6 +94,12 @@ export class RagDocumentIngestionEnver extends OdmdEnverCdk {
             defaultIfAbsent: 'default-provider-name',
             trigger: 'no'
         });
+    }
+
+
+    getRevStackNames(): Array<string> {
+        const baseName = super.getRevStackNames()[0];
+        return [baseName, baseName + '-auth', baseName + '-webHosting', baseName + '-webUi'];
     }
 }
 
