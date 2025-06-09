@@ -27,10 +27,6 @@ export class RagUserAuthBuild extends OdmdBuildUserAuth {
 export class RagUserAuthEnver extends OdmdEnverUserAuth {
     readonly owner: RagUserAuthBuild;
 
-    // RAG-specific consuming services - callbacks for authenticated services
-    readonly ragServiceCallbacks: OdmdCrossRefConsumer<this, IOdmdEnver>[] = [];
-    readonly ragLogoutCallbacks: OdmdCrossRefConsumer<this, IOdmdEnver>[] = [];
-
     constructor(owner: RagUserAuthBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
         this.owner = owner;
@@ -45,8 +41,8 @@ export class RagUserAuthEnver extends OdmdEnverUserAuth {
 
         // Wire callbacks from document ingestion service (dev and prod envers)
         ragContracts.ragDocumentIngestionBuild.envers.forEach((e, index) => {
-            this.ragServiceCallbacks.push(new OdmdCrossRefConsumer(this, `doc-ing-callback-${index}`, e.authCallbackUrl));
-            this.ragLogoutCallbacks.push(new OdmdCrossRefConsumer(this, `doc-ing-logout-${index}`, e.logoutUrl));
+            this.callbackUrls.push(new OdmdCrossRefConsumer(this, `doc-ing-callback-${index}`, e.authCallbackUrl));
+            this.logoutUrls.push(new OdmdCrossRefConsumer(this, `doc-ing-logout-${index}`, e.logoutUrl));
         });
 
         // Note: Knowledge retrieval and generation services will be added when they implement callback/logout URLs
