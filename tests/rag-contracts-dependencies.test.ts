@@ -42,10 +42,8 @@ describe('RagContracts Service Dependencies', () => {
         
         // User-Auth consumes callback/logout URLs from services
         const userAuthEnver = ragContracts.userAuth!.envers[0] as RagUserAuthEnver;
-        expect(userAuthEnver.ragServiceCallbacks).toBeDefined();
-        expect(userAuthEnver.ragLogoutCallbacks).toBeDefined();
-        expect(Array.isArray(userAuthEnver.ragServiceCallbacks)).toBe(true);
-        expect(Array.isArray(userAuthEnver.ragLogoutCallbacks)).toBe(true);
+        expect(userAuthEnver.logoutUrls.length).toBeGreaterThan(0)
+        expect(userAuthEnver.callbackUrls.length).toBeGreaterThan(0)
     });
 
     test('should have correct producer-consumer relationships for document flow', () => {
@@ -101,7 +99,7 @@ describe('RagContracts Service Dependencies', () => {
         expect(docIngestion.logoutUrl).toBeDefined();
         
         // User-Auth consumes callback URLs
-        expect(userAuth.ragServiceCallbacks.length).toBeGreaterThan(0);
-        expect(userAuth.ragLogoutCallbacks.length).toBeGreaterThan(0);
+        expect(userAuth.logoutUrls.length).toBeGreaterThan(0);
+        expect(userAuth.callbackUrls.length).toBeGreaterThan(0);
     });
 }); 
