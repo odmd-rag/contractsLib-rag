@@ -41,8 +41,14 @@ export class RagUserAuthEnver extends OdmdEnverUserAuth {
 
         // Wire callbacks from document ingestion service (dev and prod envers)
         ragContracts.ragDocumentIngestionBuild.envers.forEach((e, index) => {
-            this.callbackUrls.push(new OdmdCrossRefConsumer(this, `doc-ing-callback-${index}`, e.authCallbackUrl));
-            this.logoutUrls.push(new OdmdCrossRefConsumer(this, `doc-ing-logout-${index}`, e.logoutUrl));
+            this.callbackUrls.push(new OdmdCrossRefConsumer(this, `doc-ing-callback-${index}`, e.authCallbackUrl, {
+                trigger: 'directly',
+                defaultIfAbsent: 'http://localhost:1234/callback'
+            }));
+            this.logoutUrls.push(new OdmdCrossRefConsumer(this, `doc-ing-logout-${index}`, e.logoutUrl, {
+                trigger: 'directly',
+                defaultIfAbsent: 'http://localhost:1234/logout'
+            }));
         });
 
         // Note: Knowledge retrieval and generation services will be added when they implement callback/logout URLs

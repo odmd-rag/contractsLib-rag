@@ -14,7 +14,7 @@
     "test:singleton": "jest --testPathPattern=rag-contracts-singleton.test.ts --runInBand --forceExit",
     "test:singleton-mocked": "jest --testPathPattern=rag-contracts-singleton-with-mocks.test.ts --runInBand --forceExit",
     "test:structure": "jest --testPathPattern=rag-contracts-structure.test.ts --runInBand --forceExit",
-    "test:schemas": "jest --testPathPattern=rag-contracts-schemas.test.ts --runInBand --forceExit", 
+    "test:schemas": "jest --testPathPattern=rag-contracts-schemas.test.ts --runInBand --forceExit",
     "test:dependencies": "jest --testPathPattern=rag-contracts-dependencies.test.ts --runInBand --forceExit",
     "test:package": "jest --testPathPattern=rag-contracts-package.test.ts --runInBand --forceExit",
     "start": "node lib/app.js",

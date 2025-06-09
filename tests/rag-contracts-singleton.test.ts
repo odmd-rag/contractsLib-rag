@@ -44,6 +44,7 @@ describe('RagContracts Singleton', () => {
         });
         
         const ragContracts = new RagContracts(app);
+        app.synth()
         
         expect(ragContracts).toBeInstanceOf(RagContracts);
         expect(RagContracts.inst).toBe(ragContracts);
