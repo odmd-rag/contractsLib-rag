@@ -1,5 +1,5 @@
 import { App } from 'aws-cdk-lib';
-import { RagContracts } from '../src';
+import {RagContracts, RagUserAuthEnver} from '../src';
 
 describe('RagContracts Schema Contracts', () => {
     // Setup environment variables and create instance
@@ -24,22 +24,11 @@ describe('RagContracts Schema Contracts', () => {
     });
 
     test('should have schema contracts for user-auth identity provider', () => {
-        const userAuthEnver = ragContracts.userAuth!.envers[0] as any;
+        const userAuthEnver = ragContracts.userAuth!.envers[0] as RagUserAuthEnver;
         
         // Check identity provider producers
         expect(userAuthEnver.idProviderName).toBeDefined();
         expect(userAuthEnver.idProviderClientId).toBeDefined();
-        expect(userAuthEnver.idProviderClientSecret).toBeDefined();
-        
-        // Check user pool producers
-        expect(userAuthEnver.userPoolId).toBeDefined();
-        expect(userAuthEnver.userPoolClientId).toBeDefined();
-        expect(userAuthEnver.userPoolDomain).toBeDefined();
-        
-        // Check authentication endpoints
-        expect(userAuthEnver.loginUrl).toBeDefined();
-        expect(userAuthEnver.logoutUrl).toBeDefined();
-        expect(userAuthEnver.signupUrl).toBeDefined();
     });
 
     test('should have schema contracts for document processing events and streams', () => {

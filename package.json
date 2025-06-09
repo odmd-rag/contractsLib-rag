@@ -9,7 +9,7 @@
     "clean": "rimraf dist/",
     "clean:win": "if exist dist rmdir /s /q dist",
     "debug": "npx jest --testPathPattern=debug-envers.test.ts --runInBand --forceExit",
-    "test": "npm run test:isolated",
+    "test": "tsc && npm run test:isolated",
     "test:isolated": "npm run test:singleton && npm run test:structure && npm run test:schemas && npm run test:dependencies && npm run test:package",
     "test:singleton": "jest --testPathPattern=rag-contracts-singleton.test.ts --runInBand --forceExit",
     "test:singleton-mocked": "jest --testPathPattern=rag-contracts-singleton-with-mocks.test.ts --runInBand --forceExit",

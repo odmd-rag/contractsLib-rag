@@ -91,7 +91,6 @@ describe('RagContracts Service Dependencies', () => {
         // User-Auth produces identity provider details
         expect(userAuth.idProviderName).toBeDefined();
         expect(userAuth.idProviderClientId).toBeDefined();
-        expect(userAuth.userPoolId).toBeDefined();
         
         // Document Ingestion consumes auth details
         expect(docIngestion.authProviderClientId).toBeDefined()

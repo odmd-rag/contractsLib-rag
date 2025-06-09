@@ -51,7 +51,6 @@ describe('RagContracts Package Consistency', () => {
         
         expect(scripts.build).toBe('tsc');
         expect(scripts.clean).toBe('rimraf dist/');
-        expect(scripts.test).toBe('npm run test:isolated');
         expect(scripts['test:isolated']).toBeDefined();
         expect(scripts['test:singleton']).toBeDefined();
         expect(scripts['test:structure']).toBeDefined();
