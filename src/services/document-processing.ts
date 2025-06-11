@@ -224,12 +224,10 @@ export class DocumentProcessingStreamsProducer extends OdmdCrossRefProducer<Odmd
  * RAG Document Processing Service Enver
  */
 export class RagDocumentProcessingEnver extends OdmdEnverCdk {
-    constructor(owner: RagDocumentProcessingBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
+    readonly ingestionEnver:RagDocumentIngestionEnver
+    constructor(owner: RagDocumentProcessingBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF, ingestionEnver: RagDocumentIngestionEnver) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
-        
-        // Subscribe to document validation events from ingestion service EventBridge bus
-        const documentIngestionEnver = owner.contracts.ragDocumentIngestionBuild.dev; // Use appropriate env
-        this.documentEventsSubscription = new OdmdCrossRefConsumer(this, 'documentEventsSubscription', documentIngestionEnver.documentValidationEvents.eventBridge);
+        this.ingestionEnver = ingestionEnver
         
         // Own the Kinesis streams for processing with custom sharding strategies
         this.processingStreams = new DocumentProcessingStreamsProducer(this, 'processing-streams');
@@ -238,11 +236,48 @@ export class RagDocumentProcessingEnver extends OdmdEnverCdk {
         this.processedContentEvents = new ProcessedContentEventProducer(this, 'processed-content-events');
     }
 
-    /**
-     * EventBridge bus subscription to document validation events
-     * The processing service will create its own rules and DLQ internally
-     */
-    readonly documentEventsSubscription: OdmdCrossRefConsumer<RagDocumentProcessingEnver, OdmdEnverCdk>;
+    // Consumers for ingestion service EventBridge events and schemas
+    documentValidationEventBus!: OdmdCrossRefConsumer<this, any>;
+    documentValidatedSchemaArn!: OdmdCrossRefConsumer<this, any>;
+    documentRejectedSchemaArn!: OdmdCrossRefConsumer<this, any>;
+    documentQuarantinedSchemaArn!: OdmdCrossRefConsumer<this, any>;
+
+    wireConsuming() {
+        
+        // Consume EventBridge bus for event subscription
+        this.documentValidationEventBus = new OdmdCrossRefConsumer(
+            this, 'doc-validation-bus',
+            this.ingestionEnver.documentValidationEvents.eventBridge, {
+                defaultIfAbsent: 'default-bus-name',
+                trigger: 'no'
+            }
+        );
+        
+        // Consume schema ARNs for validation and type generation
+        this.documentValidatedSchemaArn = new OdmdCrossRefConsumer(
+            this, 'doc-validated-schema',
+            this.ingestionEnver.documentValidationEvents.documentValidatedSchema, {
+                defaultIfAbsent: 'default-schema-arn',
+                trigger: 'no'
+            }
+        );
+        
+        this.documentRejectedSchemaArn = new OdmdCrossRefConsumer(
+            this, 'doc-rejected-schema',
+            this.ingestionEnver.documentValidationEvents.documentRejectedSchema, {
+                defaultIfAbsent: 'default-schema-arn',
+                trigger: 'no'
+            }
+        );
+        
+        this.documentQuarantinedSchemaArn = new OdmdCrossRefConsumer(
+            this, 'doc-quarantined-schema',
+            this.ingestionEnver.documentValidationEvents.documentQuarantinedSchema, {
+                defaultIfAbsent: 'default-schema-arn',
+                trigger: 'no'
+            }
+        );
+    }
     
     /**
      * Owned Kinesis streams with custom sharding strategies
@@ -284,12 +319,14 @@ export class RagDocumentProcessingBuild extends OdmdBuild<OdmdEnverCdk> {
     protected initializeEnvers(): void {
         this._dev = new RagDocumentProcessingEnver(this,
             this.contracts.accounts.workspace1, 'us-east-2',
-            new SRC_Rev_REF('b', 'dev')
+            new SRC_Rev_REF('b', 'dev'),
+            this.contracts.ragDocumentIngestionBuild.dev
         );
 
         this._prod = new RagDocumentProcessingEnver(this,
             this.contracts.accounts.workspace2, 'us-east-2',
-            new SRC_Rev_REF('b', 'main')
+            new SRC_Rev_REF('b', 'main'),
+            this.contracts.ragDocumentIngestionBuild.prod
         );
 
         this._envers = [this._dev, this._prod];
@@ -297,5 +334,9 @@ export class RagDocumentProcessingBuild extends OdmdBuild<OdmdEnverCdk> {
 
     get contracts(): RagContracts {
         return super.contracts as RagContracts;
+    }
+    
+    wireConsuming() {
+        this.envers.forEach(e => e.wireConsuming());
     }
 } 

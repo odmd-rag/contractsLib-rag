@@ -85,6 +85,7 @@ export class RagContracts extends OndemandContracts<AccountsRag, GithubReposRag,
 
         // Wire all consuming relationships
         this.ragDocumentIngestionBuild.wireConsuming();
+        this.ragDocumentProcessingBuild.wireConsuming();
         (this.userAuth!.envers[0] as RagUserAuthEnver).wireConsuming();
 
         this.odmdBuilds.forEach(build => {
