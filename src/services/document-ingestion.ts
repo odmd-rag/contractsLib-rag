@@ -99,7 +99,7 @@ export class RagDocumentIngestionEnver extends OdmdEnverCdk {
 
     getRevStackNames(): Array<string> {
         const baseName = super.getRevStackNames()[0];
-        return [baseName, baseName + '-auth', baseName + '-webHosting', baseName + '-webUi'];
+        return [baseName, baseName + '-webHosting', baseName + '-webUi'];
     }
 }
 
