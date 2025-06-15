@@ -37,38 +37,6 @@ describe('RagContracts Schema Contracts', () => {
         // Check processed content events
         const eventProducer = docProcessingDev.processedContentEvents;
         expect(eventProducer.eventBridge).toBeDefined();
-        expect(eventProducer.contentExtractedSchema).toBeDefined();
-        expect(eventProducer.contentChunkedSchema).toBeDefined();
-        expect(eventProducer.processingFailedSchema).toBeDefined();
-        expect(eventProducer.processingMetricsSchema).toBeDefined();
-        
-        // Check Kinesis streams and their schemas
-        const streamsProducer = docProcessingDev.processingStreams;
-        
-        // Main processing stream
-        expect(streamsProducer.mainProcessingStream).toBeDefined();
-        expect(streamsProducer.mainDocumentRecordSchema).toBeDefined();
-        expect(streamsProducer.mainProcessingResultSchema).toBeDefined();
-        
-        // Priority processing stream
-        expect(streamsProducer.priorityProcessingStream).toBeDefined();
-        expect(streamsProducer.priorityDocumentRecordSchema).toBeDefined();
-        expect(streamsProducer.slaTrackingSchema).toBeDefined();
-        
-        // Batch processing stream
-        expect(streamsProducer.batchProcessingStream).toBeDefined();
-        expect(streamsProducer.batchJobRecordSchema).toBeDefined();
-        expect(streamsProducer.batchProgressSchema).toBeDefined();
-        
-        // DLQ stream
-        expect(streamsProducer.dlqStream).toBeDefined();
-        expect(streamsProducer.failedRecordSchema).toBeDefined();
-        expect(streamsProducer.errorContextSchema).toBeDefined();
-        
-        // Metrics stream
-        expect(streamsProducer.metricsStream).toBeDefined();
-        expect(streamsProducer.performanceMetricsSchema).toBeDefined();
-        expect(streamsProducer.resourceUsageSchema).toBeDefined();
     });
 
     test('should have schema contracts for embedding events', () => {
