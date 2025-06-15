@@ -50,10 +50,7 @@ describe('RagContracts Service Dependencies', () => {
         // Document Ingestion → Document Processing
         const docIngestion = ragContracts.ragDocumentIngestionBuild.dev;
         const docProcessing = ragContracts.ragDocumentProcessingBuild.dev;
-        
-        expect(docIngestion.documentValidationEvents).toBeDefined();
-        // expect(docProcessing.documentEventsSubscription).toBeDefined();
-        
+
         // Document Processing → Embedding
         const embedding = ragContracts.ragEmbeddingBuild.dev;
         

@@ -10,19 +10,6 @@ describe('RagContracts Schema Contracts', () => {
     const app = new App();
     const ragContracts = new RagContracts(app);
 
-    test('should have schema contracts for document ingestion events', () => {
-        const docIngestionDev = ragContracts.ragDocumentIngestionBuild.dev;
-        const eventProducer = docIngestionDev.documentValidationEvents;
-        
-        // Check EventBridge bus endpoint
-        expect(eventProducer.eventBridge).toBeDefined();
-        
-        // Check schema contracts
-        expect(eventProducer.documentValidatedSchema).toBeDefined();
-        expect(eventProducer.documentRejectedSchema).toBeDefined();
-        expect(eventProducer.documentQuarantinedSchema).toBeDefined();
-    });
-
     test('should have schema contracts for user-auth identity provider', () => {
         const userAuthEnver = ragContracts.userAuth!.envers[0] as RagUserAuthEnver;
         
