@@ -60,48 +60,38 @@ export class RagDocumentProcessingEnver extends OdmdEnverCdk {
         // Initialize producers for resources this service creates
         this.processedContentQueue = new OdmdCrossRefProducer(this, 'processed-content-queue');
         this.processedContentEvents = new ProcessedContentEventProducer(this, 'processed-content-events');
+        
+        // Initialize role ARN producers for cross-service permissions
+        this.s3PollerRoleArn = new OdmdCrossRefProducer(this, 's3-poller-role-arn');
+        this.documentProcessorRoleArn = new OdmdCrossRefProducer(this, 'document-processor-role-arn');
     }
 
     // === CONSUMING from ingestion service (using getSharedValue) ===
-    documentValidationEventBus!: OdmdCrossRefConsumer<this, any>;
-    documentValidatedSchemaArn!: OdmdCrossRefConsumer<this, any>;
-    documentRejectedSchemaArn!: OdmdCrossRefConsumer<this, any>;
-    documentQuarantinedSchemaArn!: OdmdCrossRefConsumer<this, any>;
+    documentBucket!: OdmdCrossRefConsumer<this, any>;
+    quarantineBucket!: OdmdCrossRefConsumer<this, any>;
 
     // === PRODUCING for embedding service (using OdmdShareOut) ===
     readonly processedContentQueue: OdmdCrossRefProducer<RagDocumentProcessingEnver>;
     readonly processedContentEvents: ProcessedContentEventProducer;
+    
+    // === PRODUCING role ARNs for ingestion service to grant S3 permissions ===
+    readonly s3PollerRoleArn: OdmdCrossRefProducer<RagDocumentProcessingEnver>;
+    readonly documentProcessorRoleArn: OdmdCrossRefProducer<RagDocumentProcessingEnver>;
 
     wireConsuming() {
-        // Wire consumption from document ingestion service EventBridge and schemas
-        this.documentValidationEventBus = new OdmdCrossRefConsumer(
-            this, 'doc-validation-bus',
-            this.ingestionEnver.documentValidationEvents.eventBridge, {
-                defaultIfAbsent: 'default-bus-name',
+        // Wire consumption from document ingestion service S3 storage resources
+        this.documentBucket = new OdmdCrossRefConsumer(
+            this, 'doc-bucket',
+            this.ingestionEnver.documentStorageResources.documentBucket, {
+                defaultIfAbsent: 'default-bucket-name',
                 trigger: 'no'
             }
         );
 
-        this.documentValidatedSchemaArn = new OdmdCrossRefConsumer(
-            this, 'doc-validated-schema',
-            this.ingestionEnver.documentValidationEvents.documentValidatedSchema, {
-                defaultIfAbsent: 'default-schema-arn',
-                trigger: 'no'
-            }
-        );
-
-        this.documentRejectedSchemaArn = new OdmdCrossRefConsumer(
-            this, 'doc-rejected-schema',
-            this.ingestionEnver.documentValidationEvents.documentRejectedSchema, {
-                defaultIfAbsent: 'default-schema-arn',
-                trigger: 'no'
-            }
-        );
-
-        this.documentQuarantinedSchemaArn = new OdmdCrossRefConsumer(
-            this, 'doc-quarantined-schema',
-            this.ingestionEnver.documentValidationEvents.documentQuarantinedSchema, {
-                defaultIfAbsent: 'default-schema-arn',
+        this.quarantineBucket = new OdmdCrossRefConsumer(
+            this, 'quarantine-bucket',
+            this.ingestionEnver.documentStorageResources.quarantineBucket, {
+                defaultIfAbsent: 'default-quarantine-bucket-name',
                 trigger: 'no'
             }
         );

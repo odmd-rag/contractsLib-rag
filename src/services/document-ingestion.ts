@@ -3,55 +3,33 @@ import  { RagContracts } from "../rag-contracts";
 import { RagUserAuthEnver } from "./user-auth";
 
 /**
- * Document Validation Event Producer (EventBridge)
- * Publishes "Document Validated" events for downstream processing services
+ * Document Storage Resource Producer (S3)
+ * Provides access to the document storage bucket for downstream processing services
  */
-export class DocumentValidationEventProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
+export class DocumentStorageResourceProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
     constructor(owner: OdmdEnverCdk, id: string) {
         super(owner, id, {
             children: [
-                {
-                    pathPart: 'event-bridge-bus',      // EventBridge bus for publishing document events
-                    children: [
-                        {pathPart: 'document-validated-event-schema'},    // Schema contract for document validation events
-                        {pathPart: 'document-rejected-event-schema'},     // Schema contract for document rejection events
-                        {pathPart: 'document-quarantined-event-schema'}   // Schema contract for document quarantine events
-                    ]
-                }
+                {pathPart: 'document-bucket'},        // S3 bucket for uploaded documents
+                {pathPart: 'quarantine-bucket'}       // S3 bucket for quarantined documents
             ]
         });
     }
 
     /**
-     * EventBridge custom bus for RAG document events
-     * This is the contract interface that other services can subscribe to
+     * S3 bucket containing uploaded documents with timestamp-hash keys
+     * This is the primary contract interface for downstream services to poll
      */
-    public get eventBridge() {
+    public get documentBucket() {
         return this.children![0]!
     }
 
     /**
-     * Schema contract for successful document validation events
-     * Defines the data structure for documents that passed validation
+     * S3 bucket for quarantined documents requiring manual review
+     * Downstream services may need read access for comprehensive processing
      */
-    public get documentValidatedSchema() {
-        return this.eventBridge.children![0]!
-    }
-
-    /**
-     * Schema contract for document rejection events
-     * Defines the data structure for documents that failed validation
-     */
-    public get documentRejectedSchema() {
-        return this.eventBridge.children![1]!
-    }
-
-    /**
-     * Schema contract for document quarantine events
-     * Defines the data structure for documents requiring manual review
-     */
-    public get documentQuarantinedSchema() {
-        return this.eventBridge.children![2]!
+    public get quarantineBucket() {
+        return this.children![1]!
     }
 }
 
@@ -62,15 +40,15 @@ export class RagDocumentIngestionEnver extends OdmdEnverCdk {
     constructor(owner: RagDocumentIngestionBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
         
-        // Initialize EventBridge producer for document validation events
-        this.documentValidationEvents = new DocumentValidationEventProducer(this, 'doc-validation-events');
+        // Initialize S3 storage resources for downstream services to poll
+        this.documentStorageResources = new DocumentStorageResourceProducer(this, 'doc-storage-resources');
         
         // Initialize auth callback URLs for user-auth service to consume
         this.authCallbackUrl = new OdmdCrossRefProducer(this, 'auth-callback-url');
         this.logoutUrl = new OdmdCrossRefProducer(this, 'logout-url');
     }
 
-    readonly documentValidationEvents: DocumentValidationEventProducer;
+    readonly documentStorageResources: DocumentStorageResourceProducer;
     
     // Auth callback URLs produced for user-auth service to consume
     readonly authCallbackUrl: OdmdCrossRefProducer<RagDocumentIngestionEnver>;
