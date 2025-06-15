@@ -5,6 +5,7 @@ import { RagDocumentIngestionEnver } from "./document-ingestion";
 /**
  * Processed Content Event Producer (EventBridge)
  * Publishes "Document Processed" events for embedding service consumption
+ * Only defines NEW event schemas that this service produces (not consumed from ingestion)
  */
 export class ProcessedContentEventProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
     constructor(owner: OdmdEnverCdk, id: string) {
@@ -13,10 +14,8 @@ export class ProcessedContentEventProducer extends OdmdCrossRefProducer<OdmdEnve
                 {
                     pathPart: 'processed-content-bus',      // EventBridge bus for processed document events
                     children: [
-                        {pathPart: 'content-extracted-event-schema'},     // Schema for successfully extracted content
-                        {pathPart: 'content-chunked-event-schema'},       // Schema for content chunking completion
-                        {pathPart: 'processing-failed-event-schema'},     // Schema for processing failure events
-                        {pathPart: 'processing-metrics-event-schema'}     // Schema for processing metrics events
+                        {pathPart: 'content-processed-event-schema'},     // NEW: Schema for successfully processed content
+                        {pathPart: 'processing-completed-event-schema'}   // NEW: Schema for processing completion
                     ]
                 }
             ]
@@ -32,191 +31,19 @@ export class ProcessedContentEventProducer extends OdmdCrossRefProducer<OdmdEnve
     }
 
     /**
-     * Schema contract for content extraction completion events
-     * Defines the data structure for successfully extracted and preprocessed content
+     * Schema contract for content processing completion events
+     * Defines the data structure for successfully processed and chunked content
      */
-    public get contentExtractedSchema() {
+    public get contentProcessedSchema() {
         return this.eventBridge.children![0]!
     }
 
     /**
-     * Schema contract for content chunking completion events
-     * Defines the data structure for chunked content ready for embedding
+     * Schema contract for processing completion events  
+     * Defines the data structure for processing workflow completion
      */
-    public get contentChunkedSchema() {
+    public get processingCompletedSchema() {
         return this.eventBridge.children![1]!
-    }
-
-    /**
-     * Schema contract for processing failure events
-     * Defines the data structure for processing error information
-     */
-    public get processingFailedSchema() {
-        return this.eventBridge.children![2]!
-    }
-
-    /**
-     * Schema contract for processing metrics events
-     * Defines the data structure for processing performance metrics
-     */
-    public get processingMetricsSchema() {
-        return this.eventBridge.children![3]!
-    }
-}
-
-/**
- * Document Processing Kinesis Streams Producer
- * Owns the sharding strategy and stream topology based on processing requirements
- */
-export class DocumentProcessingStreamsProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
-    constructor(owner: OdmdEnverCdk, id: string) {
-        super(owner, id, {
-            children: [
-                {
-                    pathPart: 'main-processing-stream',     // Main document processing stream
-                    children: [
-                        {pathPart: 'document-record-schema'},         // Schema for main processing records
-                        {pathPart: 'processing-result-schema'}        // Schema for processing results
-                    ]
-                },
-                {
-                    pathPart: 'priority-processing-stream', // High-priority document stream
-                    children: [
-                        {pathPart: 'priority-document-record-schema'}, // Schema for priority processing records
-                        {pathPart: 'sla-tracking-schema'}              // Schema for SLA tracking data
-                    ]
-                },
-                {
-                    pathPart: 'batch-processing-stream',    // Batch processing stream
-                    children: [
-                        {pathPart: 'batch-job-record-schema'},        // Schema for batch job records
-                        {pathPart: 'batch-progress-schema'}           // Schema for batch progress tracking
-                    ]
-                },
-                {
-                    pathPart: 'dlq-stream',                 // Dead letter queue stream
-                    children: [
-                        {pathPart: 'failed-record-schema'},           // Schema for failed processing records
-                        {pathPart: 'error-context-schema'}            // Schema for error context and debugging info
-                    ]
-                },
-                {
-                    pathPart: 'metrics-stream',             // Processing metrics and monitoring
-                    children: [
-                        {pathPart: 'performance-metrics-schema'},     // Schema for performance metrics
-                        {pathPart: 'resource-usage-schema'}           // Schema for resource utilization metrics
-                    ]
-                }
-            ]
-        });
-    }
-
-    /**
-     * Main Kinesis stream for standard document processing
-     * Sharding: By document type and size
-     */
-    public get mainProcessingStream() {
-        return this.children![0]!
-    }
-
-    /**
-     * Schema contract for main processing stream records
-     */
-    public get mainDocumentRecordSchema() {
-        return this.mainProcessingStream.children![0]!
-    }
-
-    /**
-     * Schema contract for main processing results
-     */
-    public get mainProcessingResultSchema() {
-        return this.mainProcessingStream.children![1]!
-    }
-
-    /**
-     * High-priority stream for urgent documents
-     * Sharding: By user priority and SLA requirements
-     */
-    public get priorityProcessingStream() {
-        return this.children![1]!
-    }
-
-    /**
-     * Schema contract for priority processing stream records
-     */
-    public get priorityDocumentRecordSchema() {
-        return this.priorityProcessingStream.children![0]!
-    }
-
-    /**
-     * Schema contract for SLA tracking data
-     */
-    public get slaTrackingSchema() {
-        return this.priorityProcessingStream.children![1]!
-    }
-
-    /**
-     * Batch processing stream for large document sets
-     * Sharding: By batch ID and processing complexity
-     */
-    public get batchProcessingStream() {
-        return this.children![2]!
-    }
-
-    /**
-     * Schema contract for batch job records
-     */
-    public get batchJobRecordSchema() {
-        return this.batchProcessingStream.children![0]!
-    }
-
-    /**
-     * Schema contract for batch progress tracking
-     */
-    public get batchProgressSchema() {
-        return this.batchProcessingStream.children![1]!
-    }
-
-    /**
-     * Dead letter queue for failed processing attempts
-     */
-    public get dlqStream() {
-        return this.children![3]!
-    }
-
-    /**
-     * Schema contract for failed processing records
-     */
-    public get failedRecordSchema() {
-        return this.dlqStream.children![0]!
-    }
-
-    /**
-     * Schema contract for error context and debugging information
-     */
-    public get errorContextSchema() {
-        return this.dlqStream.children![1]!
-    }
-
-    /**
-     * Metrics and monitoring stream
-     */
-    public get metricsStream() {
-        return this.children![4]!
-    }
-
-    /**
-     * Schema contract for performance metrics
-     */
-    public get performanceMetricsSchema() {
-        return this.metricsStream.children![0]!
-    }
-
-    /**
-     * Schema contract for resource utilization metrics
-     */
-    public get resourceUsageSchema() {
-        return this.metricsStream.children![1]!
     }
 }
 
@@ -224,27 +51,29 @@ export class DocumentProcessingStreamsProducer extends OdmdCrossRefProducer<Odmd
  * RAG Document Processing Service Enver
  */
 export class RagDocumentProcessingEnver extends OdmdEnverCdk {
-    readonly ingestionEnver:RagDocumentIngestionEnver
+    readonly ingestionEnver: RagDocumentIngestionEnver
+    
     constructor(owner: RagDocumentProcessingBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF, ingestionEnver: RagDocumentIngestionEnver) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
-        this.ingestionEnver = ingestionEnver
+        this.ingestionEnver = ingestionEnver;
         
-        // Own the Kinesis streams for processing with custom sharding strategies
-        this.processingStreams = new DocumentProcessingStreamsProducer(this, 'processing-streams');
-        
-        // Produce processed content events for embedding service
+        // Initialize producers for resources this service creates
+        this.processedContentQueue = new OdmdCrossRefProducer(this, 'processed-content-queue');
         this.processedContentEvents = new ProcessedContentEventProducer(this, 'processed-content-events');
     }
 
-    // Consumers for ingestion service EventBridge events and schemas
+    // === CONSUMING from ingestion service (using getSharedValue) ===
     documentValidationEventBus!: OdmdCrossRefConsumer<this, any>;
     documentValidatedSchemaArn!: OdmdCrossRefConsumer<this, any>;
     documentRejectedSchemaArn!: OdmdCrossRefConsumer<this, any>;
     documentQuarantinedSchemaArn!: OdmdCrossRefConsumer<this, any>;
 
+    // === PRODUCING for embedding service (using OdmdShareOut) ===
+    readonly processedContentQueue: OdmdCrossRefProducer<RagDocumentProcessingEnver>;
+    readonly processedContentEvents: ProcessedContentEventProducer;
+
     wireConsuming() {
-        
-        // Consume EventBridge bus for event subscription
+        // Wire consumption from document ingestion service EventBridge and schemas
         this.documentValidationEventBus = new OdmdCrossRefConsumer(
             this, 'doc-validation-bus',
             this.ingestionEnver.documentValidationEvents.eventBridge, {
@@ -252,8 +81,7 @@ export class RagDocumentProcessingEnver extends OdmdEnverCdk {
                 trigger: 'no'
             }
         );
-        
-        // Consume schema ARNs for validation and type generation
+
         this.documentValidatedSchemaArn = new OdmdCrossRefConsumer(
             this, 'doc-validated-schema',
             this.ingestionEnver.documentValidationEvents.documentValidatedSchema, {
@@ -261,7 +89,7 @@ export class RagDocumentProcessingEnver extends OdmdEnverCdk {
                 trigger: 'no'
             }
         );
-        
+
         this.documentRejectedSchemaArn = new OdmdCrossRefConsumer(
             this, 'doc-rejected-schema',
             this.ingestionEnver.documentValidationEvents.documentRejectedSchema, {
@@ -269,7 +97,7 @@ export class RagDocumentProcessingEnver extends OdmdEnverCdk {
                 trigger: 'no'
             }
         );
-        
+
         this.documentQuarantinedSchemaArn = new OdmdCrossRefConsumer(
             this, 'doc-quarantined-schema',
             this.ingestionEnver.documentValidationEvents.documentQuarantinedSchema, {
@@ -278,17 +106,11 @@ export class RagDocumentProcessingEnver extends OdmdEnverCdk {
             }
         );
     }
-    
-    /**
-     * Owned Kinesis streams with custom sharding strategies
-     */
-    readonly processingStreams: DocumentProcessingStreamsProducer;
-    
-    /**
-     * EventBridge producer for processed content events
-     * Published after document processing is complete
-     */
-    readonly processedContentEvents: ProcessedContentEventProducer;
+
+    getRevStackNames(): Array<string> {
+        const baseName = super.getRevStackNames()[0];
+        return [baseName];
+    }
 }
 
 /**
@@ -317,16 +139,19 @@ export class RagDocumentProcessingBuild extends OdmdBuild<OdmdEnverCdk> {
     }
 
     protected initializeEnvers(): void {
+        const ingestionDev = this.contracts.ragDocumentIngestionBuild.dev;
+        const ingestionProd = this.contracts.ragDocumentIngestionBuild.prod;
+
         this._dev = new RagDocumentProcessingEnver(this,
             this.contracts.accounts.workspace1, 'us-east-2',
             new SRC_Rev_REF('b', 'dev'),
-            this.contracts.ragDocumentIngestionBuild.dev
+            ingestionDev
         );
 
         this._prod = new RagDocumentProcessingEnver(this,
             this.contracts.accounts.workspace2, 'us-east-2',
             new SRC_Rev_REF('b', 'main'),
-            this.contracts.ragDocumentIngestionBuild.prod
+            ingestionProd
         );
 
         this._envers = [this._dev, this._prod];
@@ -335,7 +160,7 @@ export class RagDocumentProcessingBuild extends OdmdBuild<OdmdEnverCdk> {
     get contracts(): RagContracts {
         return super.contracts as RagContracts;
     }
-    
+
     wireConsuming() {
         this.envers.forEach(e => e.wireConsuming());
     }
