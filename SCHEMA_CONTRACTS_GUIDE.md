@@ -44,7 +44,7 @@ export interface DocumentValidatedEvent {
   documentId: string;
   s3Bucket: string;
   s3Key: string;
-  documentType: 'pdf' | 'docx' | 'txt' | 'html';
+  documentType: 'pdf' | 'docx' | 'doc' | 'pptx' | 'ppt' | 'xlsx' | 'xls' | 'txt' | 'md' | 'csv' | 'json' | 'xml' | 'html' | 'rtf' | 'odt' | 'odp' | 'ods' | 'pages' | 'numbers' | 'key';
   fileSize: number;
   checksum: string;
   validationRules: string[];
@@ -182,7 +182,7 @@ export const DocumentValidatedEventSchema: JSONSchema7 = {
     s3Key: { type: 'string' },
     documentType: { 
       type: 'string', 
-      enum: ['pdf', 'docx', 'txt', 'html'] 
+      enum: ['pdf', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'txt', 'md', 'csv', 'json', 'xml', 'html', 'rtf', 'odt', 'odp', 'ods', 'pages', 'numbers', 'key'] 
     },
     fileSize: { type: 'number', minimum: 0 },
     checksum: { type: 'string' },

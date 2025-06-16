@@ -3,47 +3,36 @@ import type { RagContracts } from "../rag-contracts";
 import { RagDocumentIngestionEnver } from "./document-ingestion";
 
 /**
- * Processed Content Event Producer (EventBridge)
- * Publishes "Document Processed" events for embedding service consumption
- * Only defines NEW event schemas that this service produces (not consumed from ingestion)
+ * Processed Content Storage Resources (S3 Buckets)
+ * Provides S3 buckets for processed content that embedding service polls
+ * Replaces EventBridge with S3 polling architecture
  */
-export class ProcessedContentEventProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
+export class ProcessedContentStorageProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
     constructor(owner: OdmdEnverCdk, id: string) {
         super(owner, id, {
             children: [
-                {
-                    pathPart: 'processed-content-bus',      // EventBridge bus for processed document events
-                    children: [
-                        {pathPart: 'content-processed-event-schema'},     // NEW: Schema for successfully processed content
-                        {pathPart: 'processing-completed-event-schema'}   // NEW: Schema for processing completion
-                    ]
-                }
+                {pathPart: 'processed-content-bucket'},     // S3 bucket for processed content JSON files
+                {pathPart: 'processing-status-bucket'}      // S3 bucket for processing status/completion files
             ]
         });
     }
 
     /**
-     * EventBridge custom bus for processed document content events
-     * This is the contract interface that embedding service subscribes to
+     * S3 bucket for processed content files
+     * Contains JSON files with processed document content and chunks
+     * Consumed by embedding service via S3 polling
      */
-    public get eventBridge() {
+    public get processedContentBucket() {
         return this.children![0]!
     }
 
     /**
-     * Schema contract for content processing completion events
-     * Defines the data structure for successfully processed and chunked content
+     * S3 bucket for processing status files
+     * Contains JSON files with processing completion status and metrics
+     * Used for monitoring and debugging
      */
-    public get contentProcessedSchema() {
-        return this.eventBridge.children![0]!
-    }
-
-    /**
-     * Schema contract for processing completion events  
-     * Defines the data structure for processing workflow completion
-     */
-    public get processingCompletedSchema() {
-        return this.eventBridge.children![1]!
+    public get processingStatusBucket() {
+        return this.children![1]!
     }
 }
 
@@ -58,8 +47,7 @@ export class RagDocumentProcessingEnver extends OdmdEnverCdk {
         this.ingestionEnver = ingestionEnver;
         
         // Initialize producers for resources this service creates
-        this.processedContentQueue = new OdmdCrossRefProducer(this, 'processed-content-queue');
-        this.processedContentEvents = new ProcessedContentEventProducer(this, 'processed-content-events');
+        this.processedContentStorage = new ProcessedContentStorageProducer(this, 'processed-content-storage');
         
         // Initialize role ARN producers for cross-service permissions
         this.s3PollerRoleArn = new OdmdCrossRefProducer(this, 's3-poller-role-arn');
@@ -71,8 +59,7 @@ export class RagDocumentProcessingEnver extends OdmdEnverCdk {
     quarantineBucket!: OdmdCrossRefConsumer<this, any>;
 
     // === PRODUCING for embedding service (using OdmdShareOut) ===
-    readonly processedContentQueue: OdmdCrossRefProducer<RagDocumentProcessingEnver>;
-    readonly processedContentEvents: ProcessedContentEventProducer;
+    readonly processedContentStorage: ProcessedContentStorageProducer;
     
     // === PRODUCING role ARNs for ingestion service to grant S3 permissions ===
     readonly s3PollerRoleArn: OdmdCrossRefProducer<RagDocumentProcessingEnver>;

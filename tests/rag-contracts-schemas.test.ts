@@ -22,37 +22,33 @@ describe('RagContracts Schema Contracts', () => {
         const docProcessingDev = ragContracts.ragDocumentProcessingBuild.dev;
         
         // Check processed content events
-        const eventProducer = docProcessingDev.processedContentEvents;
-        expect(eventProducer.eventBridge).toBeDefined();
+        const eventProducer = docProcessingDev.processedContentStorage;
+        expect(eventProducer.processedContentBucket).toBeDefined();
+        expect(eventProducer.processedContentBucket).toBeDefined();
     });
 
     test('should have schema contracts for embedding events', () => {
         const embeddingDev = ragContracts.ragEmbeddingBuild.dev;
-        const eventProducer = embeddingDev.embeddingEvents;
+        const eventProducer = embeddingDev.embeddingStorage;
         
         // Check EventBridge bus endpoint
-        expect(eventProducer.eventBridge).toBeDefined();
-        
-        // Check schema contracts
-        expect(eventProducer.embeddingsGeneratedSchema).toBeDefined();
-        expect(eventProducer.embeddingFailedSchema).toBeDefined();
-        expect(eventProducer.batchEmbeddingsSchema).toBeDefined();
-        expect(eventProducer.embeddingMetricsSchema).toBeDefined();
+        expect(eventProducer.embeddingsBucket).toBeDefined();
+        expect(eventProducer.embeddingStatusBucket).toBeDefined();
+
     });
 
     test('should have schema contracts for vector storage API', () => {
         const vectorStorageDev = ragContracts.ragVectorStorageBuild.dev;
-        const apiProducer = vectorStorageDev.vectorSearchApi;
+        const apiProducer = vectorStorageDev.vectorStorage;
         
         // Check API Gateway endpoint
-        expect(apiProducer.searchApi).toBeDefined();
+        expect(apiProducer.vectorDatabaseEndpoint).toBeDefined();
         
         // Check schema contracts
-        expect(apiProducer.similaritySearchRequestSchema).toBeDefined();
-        expect(apiProducer.similaritySearchResponseSchema).toBeDefined();
-        expect(apiProducer.vectorIndexRequestSchema).toBeDefined();
-        expect(apiProducer.vectorIndexResponseSchema).toBeDefined();
-        expect(apiProducer.searchMetadataSchema).toBeDefined();
+        expect(apiProducer.vectorBackupBucket).toBeDefined();
+        expect(apiProducer.vectorIndexName).toBeDefined();
+        expect(apiProducer.vectorBackupBucket).toBeDefined();
+        expect(apiProducer.vectorMetadataBucket).toBeDefined();
     });
 
     test('should have schema contracts for knowledge retrieval API', () => {

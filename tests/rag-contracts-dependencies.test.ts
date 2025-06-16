@@ -21,11 +21,11 @@ describe('RagContracts Service Dependencies', () => {
         
         // Vector Storage consumes Embedding events
         const vectorStorageDev = ragContracts.ragVectorStorageBuild.dev;
-        expect(vectorStorageDev.embeddingEventsSubscription).toBeDefined();
+        expect(vectorStorageDev.embeddingSubscription).toBeDefined();
         
         // Knowledge Retrieval consumes Vector Storage API
         const knowledgeRetrievalDev = ragContracts.ragKnowledgeRetrievalBuild.dev;
-        expect(knowledgeRetrievalDev.vectorSearchSubscription).toBeDefined();
+        expect(knowledgeRetrievalDev.vectorStorageSubscription).toBeDefined();
         
         // Generation consumes Knowledge Retrieval API
         const generationDev = ragContracts.ragGenerationBuild.dev;
@@ -54,14 +54,14 @@ describe('RagContracts Service Dependencies', () => {
         // Document Processing → Embedding
         const embedding = ragContracts.ragEmbeddingBuild.dev;
         
-        expect(docProcessing.processedContentEvents).toBeDefined();
+        expect(docProcessing.processedContentStorage).toBeDefined();
         expect(embedding.processedContentSubscription).toBeDefined();
         
         // Embedding → Vector Storage
         const vectorStorage = ragContracts.ragVectorStorageBuild.dev;
         
-        expect(embedding.embeddingEvents).toBeDefined();
-        expect(vectorStorage.embeddingEventsSubscription).toBeDefined();
+        expect(embedding.embeddingStorage).toBeDefined();
+        expect(vectorStorage.embeddingSubscription).toBeDefined();
     });
 
     test('should have correct API consumption chain for retrieval', () => {
@@ -69,8 +69,8 @@ describe('RagContracts Service Dependencies', () => {
         const vectorStorage = ragContracts.ragVectorStorageBuild.dev;
         const knowledgeRetrieval = ragContracts.ragKnowledgeRetrievalBuild.dev;
         
-        expect(vectorStorage.vectorSearchApi).toBeDefined();
-        expect(knowledgeRetrieval.vectorSearchSubscription).toBeDefined();
+        expect(vectorStorage.vectorStorage).toBeDefined();
+        expect(knowledgeRetrieval.vectorStorageSubscription).toBeDefined();
         
         // Knowledge Retrieval API → Generation
         const generation = ragContracts.ragGenerationBuild.dev;

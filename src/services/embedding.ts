@@ -9,64 +9,36 @@ import type {RagContracts} from "../rag-contracts";
 import {RagDocumentProcessingEnver} from "./document-processing";
 
 /**
- * Embedding Events Producer (EventBridge)
- * Publishes "Embeddings Generated" events for vector storage service consumption
+ * Embedding Storage Resources (S3 Buckets)
+ * Provides S3 buckets for embeddings that vector storage service polls
+ * Replaces EventBridge with S3 polling architecture
  */
-export class EmbeddingEventsProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
+export class EmbeddingStorageProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
     constructor(owner: OdmdEnverCdk, id: string) {
         super(owner, id, {
             children: [
-                {
-                    pathPart: 'embedding-events-bus',      // EventBridge bus for embedding events
-                    children: [
-                        {pathPart: 'embeddings-generated-event-schema'},   // Schema for successful embedding generation
-                        {pathPart: 'embedding-failed-event-schema'},       // Schema for embedding generation failures
-                        {pathPart: 'batch-embeddings-event-schema'},       // Schema for batch embedding completion
-                        {pathPart: 'embedding-metrics-event-schema'}       // Schema for embedding performance metrics
-                    ]
-                }
+                {pathPart: 'embeddings-bucket'},           // S3 bucket for embedding JSON files
+                {pathPart: 'embedding-status-bucket'}      // S3 bucket for embedding status/completion files
             ]
         });
     }
 
     /**
-     * EventBridge custom bus for embedding events
-     * This is the contract interface that vector storage service subscribes to
+     * S3 bucket for embedding files
+     * Contains JSON files with generated embeddings and metadata
+     * Consumed by vector storage service via S3 polling
      */
-    public get eventBridge() {
+    public get embeddingsBucket() {
         return this.children![0]!
     }
 
     /**
-     * Schema contract for successful embedding generation events
-     * Defines the data structure for generated vector embeddings
+     * S3 bucket for embedding status files
+     * Contains JSON files with embedding completion status and metrics
+     * Used for monitoring and debugging
      */
-    public get embeddingsGeneratedSchema() {
-        return this.eventBridge.children![0]!
-    }
-
-    /**
-     * Schema contract for embedding generation failure events
-     * Defines the data structure for embedding errors and retry information
-     */
-    public get embeddingFailedSchema() {
-        return this.eventBridge.children![1]!
-    }
-
-    /**
-     * Schema contract for batch embedding completion events
-     * Defines the data structure for batch embedding job results
-     */
-    public get batchEmbeddingsSchema() {
-        return this.eventBridge.children![2]!
-    }
-
-    /**
-     * Schema contract for embedding performance metrics events
-     * Defines the data structure for embedding generation metrics
-     */
-    public get embeddingMetricsSchema() {
-        return this.eventBridge.children![3]!
+    public get embeddingStatusBucket() {
+        return this.children![1]!
     }
 }
 
@@ -77,25 +49,25 @@ export class RagEmbeddingEnver extends OdmdEnverCdk {
     constructor(owner: RagEmbeddingBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
 
-        // Subscribe to processed content events from document processing service
+        // Subscribe to processed content storage from document processing service
         const documentProcessingEnver = owner.contracts.ragDocumentProcessingBuild.dev; // Use appropriate env
-        this.processedContentSubscription = new OdmdCrossRefConsumer(this, 'processedContentSubscription', documentProcessingEnver.processedContentEvents.eventBridge);
+        this.processedContentSubscription = new OdmdCrossRefConsumer(this, 'processedContentSubscription', documentProcessingEnver.processedContentStorage.processedContentBucket);
 
-        // Produce embedding events for vector storage service
-        this.embeddingEvents = new EmbeddingEventsProducer(this, 'embedding-events');
+        // Produce embedding storage for vector storage service
+        this.embeddingStorage = new EmbeddingStorageProducer(this, 'embedding-storage');
     }
 
     /**
-     * EventBridge subscription to processed document content events
-     * Receives chunked content ready for embedding generation
+     * S3 bucket subscription to processed document content
+     * Polls S3 bucket for processed content JSON files ready for embedding generation
      */
     readonly processedContentSubscription: OdmdCrossRefConsumer<RagEmbeddingEnver, OdmdEnverCdk>;
 
     /**
-     * EventBridge producer for embedding events
-     * Published after embedding generation is complete
+     * S3 storage producer for embeddings
+     * Provides S3 buckets for embeddings that vector storage service polls
      */
-    readonly embeddingEvents: EmbeddingEventsProducer;
+    readonly embeddingStorage: EmbeddingStorageProducer;
 }
 
 /**

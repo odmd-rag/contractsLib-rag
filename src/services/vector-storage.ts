@@ -3,73 +3,51 @@ import type { RagContracts } from "../rag-contracts";
 import { RagEmbeddingEnver } from "./embedding";
 
 /**
- * Vector Search API Producer (API Gateway + Lambda)
- * Provides similarity search endpoints for Knowledge Retrieval Service consumption
+ * Vector Storage Resources (S3 Buckets + Vector Database)
+ * Provides vector database and storage for vector search service consumption
  */
-export class VectorSearchApiProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
+export class VectorStorageProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
     constructor(owner: OdmdEnverCdk, id: string) {
         super(owner, id, {
             children: [
-                {
-                    pathPart: 'vector-search-api',      // API Gateway for similarity search
-                    children: [
-                        {pathPart: 'similarity-search-request-schema'},    // Schema for similarity search requests
-                        {pathPart: 'similarity-search-response-schema'},   // Schema for similarity search responses
-                        {pathPart: 'vector-index-request-schema'},         // Schema for vector indexing requests
-                        {pathPart: 'vector-index-response-schema'},        // Schema for vector indexing responses
-                        {pathPart: 'search-metadata-schema'}               // Schema for search metadata and filters
-                    ]
-                }
+                {pathPart: 'vector-database-endpoint'},     // Vector database endpoint (e.g., Pinecone, Weaviate)
+                {pathPart: 'vector-index-name'},            // Vector index/collection name
+                {pathPart: 'vector-metadata-bucket'},       // S3 bucket for vector metadata and status
+                {pathPart: 'vector-backup-bucket'}          // S3 bucket for vector database backups
             ]
         });
     }
 
     /**
-     * API Gateway endpoint for vector similarity search
-     * This is the contract interface that Knowledge Retrieval Service consumes
+     * Vector database endpoint
+     * Connection string/endpoint for the vector database
      */
-    public get searchApi() {
+    public get vectorDatabaseEndpoint() {
         return this.children![0]!
     }
 
     /**
-     * Schema contract for similarity search request payloads
-     * Defines the data structure for incoming search queries
+     * Vector index name
+     * Name of the vector index/collection in the database
      */
-    public get similaritySearchRequestSchema() {
-        return this.searchApi.children![0]!
+    public get vectorIndexName() {
+        return this.children![1]!
     }
 
     /**
-     * Schema contract for similarity search response payloads
-     * Defines the data structure for search results and similarity scores
+     * S3 bucket for vector metadata
+     * Contains metadata about stored vectors and indexing status
      */
-    public get similaritySearchResponseSchema() {
-        return this.searchApi.children![1]!
+    public get vectorMetadataBucket() {
+        return this.children![2]!
     }
 
     /**
-     * Schema contract for vector indexing request payloads
-     * Defines the data structure for vector storage and indexing requests
+     * S3 bucket for vector backups
+     * Contains periodic backups of the vector database
      */
-    public get vectorIndexRequestSchema() {
-        return this.searchApi.children![2]!
-    }
-
-    /**
-     * Schema contract for vector indexing response payloads
-     * Defines the data structure for indexing operation results
-     */
-    public get vectorIndexResponseSchema() {
-        return this.searchApi.children![3]!
-    }
-
-    /**
-     * Schema contract for search metadata and filtering
-     * Defines the data structure for search filters, facets, and metadata
-     */
-    public get searchMetadataSchema() {
-        return this.searchApi.children![4]!
+    public get vectorBackupBucket() {
+        return this.children![3]!
     }
 }
 
@@ -79,26 +57,26 @@ export class VectorSearchApiProducer extends OdmdCrossRefProducer<OdmdEnverCdk> 
 export class RagVectorStorageEnver extends OdmdEnverCdk {
     constructor(owner: RagVectorStorageBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
-        
-        // Subscribe to embedding events from embedding service
+
+        // Subscribe to embedding storage from embedding service
         const embeddingEnver = owner.contracts.ragEmbeddingBuild.dev; // Use appropriate env
-        this.embeddingEventsSubscription = new OdmdCrossRefConsumer(this, 'embeddingEventsSubscription', embeddingEnver.embeddingEvents.eventBridge);
-        
-        // Produce vector search API for Knowledge Retrieval Service
-        this.vectorSearchApi = new VectorSearchApiProducer(this, 'vector-search-api');
+        this.embeddingSubscription = new OdmdCrossRefConsumer(this, 'embeddingSubscription', embeddingEnver.embeddingStorage.embeddingsBucket);
+
+        // Produce vector storage for knowledge retrieval service
+        this.vectorStorage = new VectorStorageProducer(this, 'vector-storage');
     }
 
     /**
-     * EventBridge subscription to embedding events
-     * Receives vector embeddings ready for storage and indexing
+     * S3 bucket subscription to embeddings
+     * Polls S3 bucket for embedding JSON files ready for vector storage
      */
-    readonly embeddingEventsSubscription: OdmdCrossRefConsumer<RagVectorStorageEnver, OdmdEnverCdk>;
-    
+    readonly embeddingSubscription: OdmdCrossRefConsumer<RagVectorStorageEnver, OdmdEnverCdk>;
+
     /**
-     * API Gateway endpoint for vector similarity search
-     * Consumed by Knowledge Retrieval Service for semantic search operations
+     * Vector storage producer
+     * Provides vector database access for knowledge retrieval service
      */
-    readonly vectorSearchApi: VectorSearchApiProducer;
+    readonly vectorStorage: VectorStorageProducer;
 }
 
 /**

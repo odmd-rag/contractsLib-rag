@@ -88,19 +88,19 @@ export class RagKnowledgeRetrievalEnver extends OdmdEnverCdk {
     constructor(owner: RagKnowledgeRetrievalBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
         
-        // Consume vector search API from Vector Storage Service
+        // Consume vector storage from Vector Storage Service
         const vectorStorageEnver = owner.contracts.ragVectorStorageBuild.dev; // Use appropriate env
-        this.vectorSearchSubscription = new OdmdCrossRefConsumer(this, 'vectorSearchSubscription', vectorStorageEnver.vectorSearchApi.searchApi);
+        this.vectorStorageSubscription = new OdmdCrossRefConsumer(this, 'vectorStorageSubscription', vectorStorageEnver.vectorStorage.vectorDatabaseEndpoint);
         
         // Produce context retrieval API for Generation Service
         this.contextRetrievalApi = new ContextRetrievalApiProducer(this, 'context-retrieval-api');
     }
 
     /**
-     * Vector Storage search API subscription
-     * Consumes similarity search capabilities from Vector Storage Service
+     * Vector Storage subscription
+     * Consumes vector database access from Vector Storage Service
      */
-    readonly vectorSearchSubscription: OdmdCrossRefConsumer<RagKnowledgeRetrievalEnver, OdmdEnverCdk>;
+    readonly vectorStorageSubscription: OdmdCrossRefConsumer<RagKnowledgeRetrievalEnver, OdmdEnverCdk>;
     
     /**
      * API Gateway endpoint for context retrieval
