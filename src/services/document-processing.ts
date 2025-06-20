@@ -55,8 +55,8 @@ export class RagDocumentProcessingEnver extends OdmdEnverCdk {
     }
 
     // === CONSUMING from ingestion service (using getSharedValue) ===
-    documentBucket!: OdmdCrossRefConsumer<this, any>;
-    quarantineBucket!: OdmdCrossRefConsumer<this, any>;
+    documentBucket!: OdmdCrossRefConsumer<this, RagDocumentIngestionEnver>;
+    quarantineBucket!: OdmdCrossRefConsumer<this, RagDocumentIngestionEnver>;
 
     // === PRODUCING for embedding service (using OdmdShareOut) ===
     readonly processedContentStorage: ProcessedContentStorageProducer;

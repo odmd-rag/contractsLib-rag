@@ -30,7 +30,13 @@ export class RagUserAuthEnver extends OdmdEnverUserAuth {
     constructor(owner: RagUserAuthBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
         this.owner = owner;
+        this.homeServerDomainName = new OdmdCrossRefProducer(this, 'home-server-domain-name')
     }
+
+    /**
+     * as a placeholder, manually change to real value
+     */
+    readonly homeServerDomainName: OdmdCrossRefProducer<RagUserAuthEnver>;
 
     wireConsuming() {
         // Wire consuming from other RAG services that need authentication

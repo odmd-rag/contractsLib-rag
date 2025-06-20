@@ -1,4 +1,11 @@
-import { OdmdBuild, OdmdEnverCdk, SRC_Rev_REF, OdmdCrossRefConsumer, OdmdCrossRefProducer } from "@ondemandenv/contracts-lib-base";
+import {
+    OdmdBuild,
+    OdmdEnverCdk,
+    SRC_Rev_REF,
+    OdmdCrossRefConsumer,
+    OdmdCrossRefProducer,
+    OdmdEnverUserAuth
+} from "@ondemandenv/contracts-lib-base";
 import type { RagContracts } from "../rag-contracts";
 import { RagEmbeddingEnver } from "./embedding";
 import { RagUserAuthEnver } from "./user-auth";
@@ -70,8 +77,11 @@ export class RagVectorStorageEnver extends OdmdEnverCdk {
     embeddingSubscription!: OdmdCrossRefConsumer<RagVectorStorageEnver, OdmdEnverCdk>;
 
     // Consuming user-auth identity provider details for vector API authentication
-    authProviderClientId!: OdmdCrossRefConsumer<this, any>;
-    authProviderName!: OdmdCrossRefConsumer<this, any>;
+    authProviderClientId!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
+    authProviderName!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
+    
+    // Consuming home server domain for direct HTTP integration
+    homeServerDomain!: OdmdCrossRefConsumer<this, RagUserAuthEnver>;
 
     wireConsuming() {
         // Wire consumption from embedding service storage resources  
@@ -95,6 +105,11 @@ export class RagVectorStorageEnver extends OdmdEnverCdk {
         
         this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName, {
             defaultIfAbsent: 'default-provider-name',
+            trigger: 'no'
+        });
+        
+        this.homeServerDomain = new OdmdCrossRefConsumer(this, userAuthEnver.homeServerDomainName.node.id, userAuthEnver.homeServerDomainName, {
+            defaultIfAbsent: 'https://localhost:3000',
             trigger: 'no'
         });
     }

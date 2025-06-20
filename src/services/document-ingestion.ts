@@ -1,4 +1,11 @@
-import { OdmdBuild, OdmdEnverCdk, SRC_Rev_REF, OdmdCrossRefProducer, OdmdCrossRefConsumer } from '@ondemandenv/contracts-lib-base';
+import {
+    OdmdBuild,
+    OdmdEnverCdk,
+    SRC_Rev_REF,
+    OdmdCrossRefProducer,
+    OdmdCrossRefConsumer,
+    OdmdEnverUserAuth
+} from '@ondemandenv/contracts-lib-base';
 import  { RagContracts } from "../rag-contracts";
 import { RagUserAuthEnver } from "./user-auth";
 
@@ -6,8 +13,8 @@ import { RagUserAuthEnver } from "./user-auth";
  * Document Storage Resource Producer (S3)
  * Provides access to the document storage bucket for downstream processing services
  */
-export class DocumentStorageResourceProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
-    constructor(owner: OdmdEnverCdk, id: string) {
+export class DocumentStorageResourceProducer extends OdmdCrossRefProducer<RagDocumentIngestionEnver> {
+    constructor(owner: RagDocumentIngestionEnver, id: string) {
         super(owner, id, {
             children: [
                 {pathPart: 'document-bucket'},        // S3 bucket for uploaded documents
@@ -55,8 +62,8 @@ export class RagDocumentIngestionEnver extends OdmdEnverCdk {
     readonly logoutUrl: OdmdCrossRefProducer<RagDocumentIngestionEnver>;
     
     // Consuming user-auth identity provider details for document authentication (single references since one auth enver)
-    authProviderClientId!: OdmdCrossRefConsumer<this, any>;
-    authProviderName!: OdmdCrossRefConsumer<this, any>;
+    authProviderClientId!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
+    authProviderName!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
     
     wireConsuming() {
         // Wire consumption from user-auth service for authentication

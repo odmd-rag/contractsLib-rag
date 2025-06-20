@@ -3,7 +3,7 @@ import {
     OdmdEnverCdk,
     SRC_Rev_REF,
     OdmdCrossRefConsumer,
-    OdmdCrossRefProducer
+    OdmdCrossRefProducer, OdmdEnverUserAuth
 } from "@ondemandenv/contracts-lib-base";
 import type { RagContracts } from "../rag-contracts";
 import { RagKnowledgeRetrievalEnver } from "./knowledge-retrieval";
@@ -109,8 +109,8 @@ export class RagGenerationEnver extends OdmdEnverCdk {
     searchSchemaSubscription!: OdmdCrossRefConsumer<RagGenerationEnver, OdmdEnverCdk>;
 
     // Auth provider subscriptions
-    authProviderClientId!: OdmdCrossRefConsumer<this, any>;
-    authProviderName!: OdmdCrossRefConsumer<this, any>;
+    authProviderClientId!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
+    authProviderName!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
 
     wireConsuming() {
         // Wire consumption from knowledge retrieval service for vector search

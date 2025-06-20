@@ -1,4 +1,11 @@
-import { OdmdBuild, OdmdEnverCdk, SRC_Rev_REF, OdmdCrossRefConsumer, OdmdCrossRefProducer } from "@ondemandenv/contracts-lib-base";
+import {
+    OdmdBuild,
+    OdmdEnverCdk,
+    SRC_Rev_REF,
+    OdmdCrossRefConsumer,
+    OdmdCrossRefProducer,
+    OdmdEnverUserAuth
+} from "@ondemandenv/contracts-lib-base";
 import type { RagContracts } from "../rag-contracts";
 import { RagUserAuthEnver } from "./user-auth";
 
@@ -78,25 +85,24 @@ export class VectorSearchProxyApiProducer extends OdmdCrossRefProducer<OdmdEnver
  * Implements proxy service that forwards to home vector server
  */
 export class RagKnowledgeRetrievalEnver extends OdmdEnverCdk {
-    private readonly homeVectorEndpoint: string;
-
     constructor(
         owner: RagKnowledgeRetrievalBuild, 
         targetAWSAccountID: string, 
         targetAWSRegion: string, 
-        targetRevision: SRC_Rev_REF,
-        homeVectorEndpoint: string
+        targetRevision: SRC_Rev_REF
     ) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
-        this.homeVectorEndpoint = homeVectorEndpoint;
         
         // Produce vector search proxy API for Generation Service
         this.vectorSearchProxyApi = new VectorSearchProxyApiProducer(this, 'vector-search-proxy-api');
     }
 
     // Auth provider subscriptions
-    authProviderClientId!: OdmdCrossRefConsumer<this, any>;
-    authProviderName!: OdmdCrossRefConsumer<this, any>;
+    authProviderClientId!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
+    authProviderName!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
+    
+    // Home server domain from user-auth service
+    homeServerDomain!: OdmdCrossRefConsumer<this, RagUserAuthEnver>;
 
     wireConsuming() {
         // Wire consumption from user-auth service for authentication
@@ -112,6 +118,11 @@ export class RagKnowledgeRetrievalEnver extends OdmdEnverCdk {
             defaultIfAbsent: 'default-provider-name',
                 trigger: 'no'
         });
+        
+        this.homeServerDomain = new OdmdCrossRefConsumer(this, userAuthEnver.homeServerDomainName.node.id, userAuthEnver.homeServerDomainName, {
+            defaultIfAbsent: 'https://localhost:3000',
+            trigger: 'no'
+        });
     }
     
     /**
@@ -122,9 +133,11 @@ export class RagKnowledgeRetrievalEnver extends OdmdEnverCdk {
     
     /**
      * Get the home vector server endpoint for this environment
+     * Note: This will be available via homeServerDomain.getSharedValue() in CDK stack
      */
     getHomeVectorEndpoint(): string {
-        return this.homeVectorEndpoint;
+        // This method is deprecated - use homeServerDomain.getSharedValue() instead
+        return 'https://localhost:3000';
     }
 }
 
@@ -155,18 +168,16 @@ export class RagKnowledgeRetrievalBuild extends OdmdBuild<OdmdEnverCdk> {
     }
 
     protected initializeEnvers(): void {
-        // Development environment with dev home server
+        // Development environment - home server domain from user-auth contract
         this._dev = new RagKnowledgeRetrievalEnver(this,
             this.contracts.accounts.workspace1, 'us-east-2',
-            new SRC_Rev_REF('b', 'dev'),
-            'https://dev-rag.your-domain.com'  // Development home server endpoint
+            new SRC_Rev_REF('b', 'dev')
         );
 
-        // Production environment with production home server
+        // Production environment - home server domain from user-auth contract
         this._prod = new RagKnowledgeRetrievalEnver(this,
             this.contracts.accounts.workspace2, 'us-east-2',
-            new SRC_Rev_REF('b', 'main'),
-            'https://rag.your-domain.com'     // Production home server endpoint
+            new SRC_Rev_REF('b', 'main')
         );
 
         this._envers = [this._dev, this._prod];
