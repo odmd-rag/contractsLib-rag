@@ -23,13 +23,13 @@ describe('RagContracts Service Dependencies', () => {
         const vectorStorageDev = ragContracts.ragVectorStorageBuild.dev;
         expect(vectorStorageDev.embeddingSubscription).toBeDefined();
         
-        // Knowledge Retrieval consumes Vector Storage API
+        // Knowledge Retrieval (Proxy) - No Vector Storage dependency in hybrid architecture
         const knowledgeRetrievalDev = ragContracts.ragKnowledgeRetrievalBuild.dev;
-        expect(knowledgeRetrievalDev.vectorStorageSubscription).toBeDefined();
+        // Knowledge Retrieval is now a simple proxy to home server, no Vector Storage subscription needed
         
-        // Generation consumes Knowledge Retrieval API
+        // Generation service - Direct API consumption in hybrid architecture (no subscription property)
         const generationDev = ragContracts.ragGenerationBuild.dev;
-        expect(generationDev.contextRetrievalSubscription).toBeDefined();
+        // Generation directly calls Knowledge Retrieval proxy API without explicit subscription in hybrid architecture
         
         // Document Ingestion consumes User-Auth identity provider details
         const docIngestionDev = ragContracts.ragDocumentIngestionBuild.dev;
@@ -64,19 +64,19 @@ describe('RagContracts Service Dependencies', () => {
         expect(vectorStorage.embeddingSubscription).toBeDefined();
     });
 
-    test('should have correct API consumption chain for retrieval', () => {
-        // Vector Storage API → Knowledge Retrieval
+    test('should have correct API consumption chain for hybrid retrieval', () => {
+        // Vector Storage API exists but is not consumed by Knowledge Retrieval in hybrid architecture
         const vectorStorage = ragContracts.ragVectorStorageBuild.dev;
         const knowledgeRetrieval = ragContracts.ragKnowledgeRetrievalBuild.dev;
         
         expect(vectorStorage.vectorStorage).toBeDefined();
-        expect(knowledgeRetrieval.vectorStorageSubscription).toBeDefined();
+        // Knowledge Retrieval no longer consumes Vector Storage - it proxies directly to home server
         
-        // Knowledge Retrieval API → Generation
+        // Knowledge Retrieval Proxy API → Generation (Hybrid Architecture)
         const generation = ragContracts.ragGenerationBuild.dev;
         
-        expect(knowledgeRetrieval.contextRetrievalApi).toBeDefined();
-        expect(generation.contextRetrievalSubscription).toBeDefined();
+        expect(knowledgeRetrieval.vectorSearchProxyApi).toBeDefined();
+        // Generation service directly calls proxy API without explicit subscription in hybrid architecture
     });
 
     test('should have correct authentication integration', () => {

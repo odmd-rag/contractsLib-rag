@@ -1,23 +1,23 @@
 import { OdmdBuild, OdmdEnverCdk, SRC_Rev_REF, OdmdCrossRefConsumer, OdmdCrossRefProducer } from "@ondemandenv/contracts-lib-base";
 import type { RagContracts } from "../rag-contracts";
+import { RagUserAuthEnver } from "./user-auth";
 
 /**
- * Context Retrieval API Producer (API Gateway + Lambda)
- * Provides context retrieval endpoints for Generation Service consumption
+ * Vector Search Proxy API Producer (API Gateway + Lambda)
+ * Provides vector search proxy endpoints that forward to home server
  */
-export class ContextRetrievalApiProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
+export class VectorSearchProxyApiProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
     constructor(owner: OdmdEnverCdk, id: string) {
         super(owner, id, {
             children: [
                 {
-                    pathPart: 'context-retrieval-api',      // API Gateway for context retrieval
+                    pathPart: 'vector-search-proxy-api',    // API Gateway for vector search proxy
                     children: [
-                        {pathPart: 'query-understanding-request-schema'},   // Schema for query analysis requests
-                        {pathPart: 'query-understanding-response-schema'},  // Schema for query analysis responses
-                        {pathPart: 'context-retrieval-request-schema'},     // Schema for context retrieval requests
-                        {pathPart: 'context-retrieval-response-schema'},    // Schema for context retrieval responses
-                        {pathPart: 'context-ranking-schema'},               // Schema for context ranking and scoring
-                        {pathPart: 'retrieval-metadata-schema'}             // Schema for retrieval metadata and filters
+                        {pathPart: 'vector-search-endpoint'},       // Main vector search endpoint
+                        {pathPart: 'health-check-endpoint'},        // Health check endpoint
+                        {pathPart: 'search-request-schema'},        // Schema for search requests
+                        {pathPart: 'search-response-schema'},       // Schema for search responses
+                        {pathPart: 'home-server-config'}            // Home server configuration
                     ]
                 }
             ]
@@ -25,92 +25,112 @@ export class ContextRetrievalApiProducer extends OdmdCrossRefProducer<OdmdEnverC
     }
 
     /**
-     * API Gateway endpoint for intelligent context retrieval
+     * API Gateway endpoint for vector search proxy
      * This is the contract interface that Generation Service consumes
      */
-    public get contextApi() {
+    public get proxyApi() {
         return this.children![0]!
     }
 
     /**
-     * Schema contract for query understanding request payloads
-     * Defines the data structure for natural language query analysis
+     * Vector search endpoint for RAG queries
+     * Forwards authenticated requests to home server
      */
-    public get queryUnderstandingRequestSchema() {
-        return this.contextApi.children![0]!
+    public get vectorSearchEndpoint() {
+        return this.proxyApi.children![0]!
     }
 
     /**
-     * Schema contract for query understanding response payloads
-     * Defines the data structure for analyzed queries and intents
+     * Health check endpoint for monitoring
+     * Checks both proxy and home server health
      */
-    public get queryUnderstandingResponseSchema() {
-        return this.contextApi.children![1]!
+    public get healthCheckEndpoint() {
+        return this.proxyApi.children![1]!
     }
 
     /**
-     * Schema contract for context retrieval request payloads
-     * Defines the data structure for context search requests
+     * Schema contract for vector search request payloads
+     * Defines the data structure for vector search requests
      */
-    public get contextRetrievalRequestSchema() {
-        return this.contextApi.children![2]!
+    public get searchRequestSchema() {
+        return this.proxyApi.children![2]!
     }
 
     /**
-     * Schema contract for context retrieval response payloads
-     * Defines the data structure for retrieved context and relevance scores
+     * Schema contract for vector search response payloads
+     * Defines the data structure for search results with metadata
      */
-    public get contextRetrievalResponseSchema() {
-        return this.contextApi.children![3]!
+    public get searchResponseSchema() {
+        return this.proxyApi.children![3]!
     }
 
     /**
-     * Schema contract for context ranking and scoring
-     * Defines the data structure for context relevance and quality scores
+     * Home server configuration contract
+     * Defines the endpoint and authentication configuration for home server
      */
-    public get contextRankingSchema() {
-        return this.contextApi.children![4]!
-    }
-
-    /**
-     * Schema contract for retrieval metadata and filtering
-     * Defines the data structure for retrieval filters, sources, and metadata
-     */
-    public get retrievalMetadataSchema() {
-        return this.contextApi.children![5]!
+    public get homeServerConfig() {
+        return this.proxyApi.children![4]!
     }
 }
 
 /**
- * RAG Knowledge Retrieval Service Enver
+ * RAG Knowledge Retrieval Service Enver (Hybrid Architecture)
+ * Implements proxy service that forwards to home vector server
  */
 export class RagKnowledgeRetrievalEnver extends OdmdEnverCdk {
-    constructor(owner: RagKnowledgeRetrievalBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
+    private readonly homeVectorEndpoint: string;
+
+    constructor(
+        owner: RagKnowledgeRetrievalBuild, 
+        targetAWSAccountID: string, 
+        targetAWSRegion: string, 
+        targetRevision: SRC_Rev_REF,
+        homeVectorEndpoint: string
+    ) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
+        this.homeVectorEndpoint = homeVectorEndpoint;
         
-        // Consume vector storage from Vector Storage Service
-        const vectorStorageEnver = owner.contracts.ragVectorStorageBuild.dev; // Use appropriate env
-        this.vectorStorageSubscription = new OdmdCrossRefConsumer(this, 'vectorStorageSubscription', vectorStorageEnver.vectorStorage.vectorDatabaseEndpoint);
-        
-        // Produce context retrieval API for Generation Service
-        this.contextRetrievalApi = new ContextRetrievalApiProducer(this, 'context-retrieval-api');
+        // Produce vector search proxy API for Generation Service
+        this.vectorSearchProxyApi = new VectorSearchProxyApiProducer(this, 'vector-search-proxy-api');
     }
 
-    /**
-     * Vector Storage subscription
-     * Consumes vector database access from Vector Storage Service
-     */
-    readonly vectorStorageSubscription: OdmdCrossRefConsumer<RagKnowledgeRetrievalEnver, OdmdEnverCdk>;
+    // Auth provider subscriptions
+    authProviderClientId!: OdmdCrossRefConsumer<this, any>;
+    authProviderName!: OdmdCrossRefConsumer<this, any>;
+
+    wireConsuming() {
+        // Wire consumption from user-auth service for authentication
+        const ragContracts = this.owner.contracts as RagContracts;
+        const userAuthEnver = ragContracts.userAuth!.envers[0] as RagUserAuthEnver
+        
+        this.authProviderClientId = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderClientId.node.id, userAuthEnver.idProviderClientId, {
+            defaultIfAbsent: 'default-client-id',
+                trigger: 'no'
+        });
+
+        this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName, {
+            defaultIfAbsent: 'default-provider-name',
+                trigger: 'no'
+        });
+    }
     
     /**
-     * API Gateway endpoint for context retrieval
-     * Consumed by Generation Service for intelligent context discovery
+     * Vector Search Proxy API producer
+     * Provides vector search endpoints that forward to home server
      */
-    readonly contextRetrievalApi: ContextRetrievalApiProducer;
+    readonly vectorSearchProxyApi: VectorSearchProxyApiProducer;
+    
+    /**
+     * Get the home vector server endpoint for this environment
+     */
+    getHomeVectorEndpoint(): string {
+        return this.homeVectorEndpoint;
+    }
 }
 
 /**
- * RAG Knowledge Retrieval Service Build
+ * RAG Knowledge Retrieval Service Build (Hybrid Architecture)
+ * Manages proxy services that forward vector searches to home servers
  */
 export class RagKnowledgeRetrievalBuild extends OdmdBuild<OdmdEnverCdk> {
     private _envers!: Array<RagKnowledgeRetrievalEnver>;
@@ -135,14 +155,18 @@ export class RagKnowledgeRetrievalBuild extends OdmdBuild<OdmdEnverCdk> {
     }
 
     protected initializeEnvers(): void {
+        // Development environment with dev home server
         this._dev = new RagKnowledgeRetrievalEnver(this,
             this.contracts.accounts.workspace1, 'us-east-2',
-            new SRC_Rev_REF('b', 'dev')
+            new SRC_Rev_REF('b', 'dev'),
+            'https://dev-rag.your-domain.com'  // Development home server endpoint
         );
 
+        // Production environment with production home server
         this._prod = new RagKnowledgeRetrievalEnver(this,
             this.contracts.accounts.workspace2, 'us-east-2',
-            new SRC_Rev_REF('b', 'main')
+            new SRC_Rev_REF('b', 'main'),
+            'https://rag.your-domain.com'     // Production home server endpoint
         );
 
         this._envers = [this._dev, this._prod];
@@ -150,5 +174,9 @@ export class RagKnowledgeRetrievalBuild extends OdmdBuild<OdmdEnverCdk> {
 
     get contracts(): RagContracts {
         return super.contracts as RagContracts;
+    }
+
+    wireConsuming() {
+        this.envers.forEach(e => e.wireConsuming());
     }
 } 

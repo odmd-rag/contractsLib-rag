@@ -5,85 +5,87 @@ import {
     OdmdCrossRefConsumer,
     OdmdCrossRefProducer
 } from "@ondemandenv/contracts-lib-base";
-import type {RagContracts} from "../rag-contracts";
+import type { RagContracts } from "../rag-contracts";
+import { RagKnowledgeRetrievalEnver } from "./knowledge-retrieval";
+import { RagUserAuthEnver } from "./user-auth";
 
 /**
- * Response Generation API Producer (API Gateway + Lambda)
- * Provides AI response generation endpoints for user interfaces and applications
+ * Generation API Producer (API Gateway + Lambda + WebUI)
+ * Provides generation endpoints and web interface for user consumption
  */
-export class ResponseGenerationApiProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
+export class GenerationApiProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
     constructor(owner: OdmdEnverCdk, id: string) {
         super(owner, id, {
             children: [
                 {
-                    pathPart: 'response-generation-api',      // API Gateway for AI response generation
+                    pathPart: 'generation-api',             // API Gateway for generation
                     children: [
-                        {pathPart: 'chat-completion-request-schema'},       // Schema for chat completion requests
-                        {pathPart: 'chat-completion-response-schema'},      // Schema for chat completion responses
-                        {pathPart: 'streaming-response-schema'},            // Schema for streaming response chunks
-                        {pathPart: 'generation-config-schema'},             // Schema for generation configuration
-                        {pathPart: 'prompt-template-schema'},               // Schema for prompt templates and context injection
-                        {pathPart: 'generation-metrics-schema'}             // Schema for generation performance metrics
+                        {pathPart: 'generation-request-schema'},     // Schema for generation requests
+                        {pathPart: 'generation-response-schema'},    // Schema for generation responses
+                        {pathPart: 'conversation-schema'},           // Schema for conversation management
+                        {pathPart: 'feedback-schema'}                // Schema for response feedback
                     ]
-                }
+                },
+                {pathPart: 'web-ui-cloudfront-url'},       // CloudFront URL for web interface
+                {pathPart: 'web-ui-s3-bucket'}             // S3 bucket for web UI assets
             ]
         });
     }
 
     /**
-     * API Gateway endpoint for AI-powered response generation
-     * This is the contract interface that user interfaces and applications consume
+     * API Gateway endpoint for RAG generation
+     * This is the main contract interface for client applications
      */
     public get generationApi() {
         return this.children![0]!
     }
 
     /**
-     * Schema contract for chat completion request payloads
-     * Defines the data structure for natural language generation requests
+     * Schema contract for generation request payloads
+     * Defines the data structure for RAG generation requests
      */
-    public get chatCompletionRequestSchema() {
+    public get generationRequestSchema() {
         return this.generationApi.children![0]!
     }
 
     /**
-     * Schema contract for chat completion response payloads
-     * Defines the data structure for generated responses and metadata
+     * Schema contract for generation response payloads
+     * Defines the data structure for generated responses with sources
      */
-    public get chatCompletionResponseSchema() {
+    public get generationResponseSchema() {
         return this.generationApi.children![1]!
     }
 
     /**
-     * Schema contract for streaming response chunks
-     * Defines the data structure for real-time streaming responses
+     * Schema contract for conversation management
+     * Defines the data structure for conversation history and context
      */
-    public get streamingResponseSchema() {
+    public get conversationSchema() {
         return this.generationApi.children![2]!
     }
 
     /**
-     * Schema contract for generation configuration
-     * Defines the data structure for LLM parameters and generation settings
+     * Schema contract for response feedback
+     * Defines the data structure for user feedback on generated responses
      */
-    public get generationConfigSchema() {
+    public get feedbackSchema() {
         return this.generationApi.children![3]!
     }
 
     /**
-     * Schema contract for prompt templates and context injection
-     * Defines the data structure for prompt engineering and context formatting
+     * CloudFront URL for web UI
+     * Public URL for accessing the RAG web interface
      */
-    public get promptTemplateSchema() {
-        return this.generationApi.children![4]!
+    public get webUiCloudFrontUrl() {
+        return this.children![1]!
     }
 
     /**
-     * Schema contract for generation performance metrics
-     * Defines the data structure for generation timing and quality metrics
+     * S3 bucket for web UI assets
+     * Bucket containing the compiled web application
      */
-    public get generationMetricsSchema() {
-        return this.generationApi.children![5]!
+    public get webUiS3Bucket() {
+        return this.children![2]!
     }
 }
 
@@ -93,26 +95,71 @@ export class ResponseGenerationApiProducer extends OdmdCrossRefProducer<OdmdEnve
 export class RagGenerationEnver extends OdmdEnverCdk {
     constructor(owner: RagGenerationBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
-
-        // Consume context retrieval API from Knowledge Retrieval Service
-        const knowledgeRetrievalEnver = owner.contracts.ragKnowledgeRetrievalBuild.dev; // Use appropriate env
-        this.contextRetrievalSubscription = new OdmdCrossRefConsumer(this, 'contextRetrievalSubscription', knowledgeRetrievalEnver.contextRetrievalApi.contextApi);
-
-        // Produce response generation API for user interfaces and applications
-        this.responseGenerationApi = new ResponseGenerationApiProducer(this, 'response-generation-api');
+        
+        // Produce generation API and web UI for client consumption
+        this.generationApi = new GenerationApiProducer(this, 'generation-api');
     }
 
     /**
-     * Knowledge Retrieval context API subscription
-     * Consumes intelligent context curation from Knowledge Retrieval Service
+     * Vector Search Proxy subscriptions
+     * Consumes vector search proxy API from Knowledge Retrieval Service
      */
-    readonly contextRetrievalSubscription: OdmdCrossRefConsumer<RagGenerationEnver, OdmdEnverCdk>;
+    vectorSearchProxySubscription!: OdmdCrossRefConsumer<RagGenerationEnver, OdmdEnverCdk>;
+    healthCheckSubscription!: OdmdCrossRefConsumer<RagGenerationEnver, OdmdEnverCdk>;
+    searchSchemaSubscription!: OdmdCrossRefConsumer<RagGenerationEnver, OdmdEnverCdk>;
 
+    // Auth provider subscriptions
+    authProviderClientId!: OdmdCrossRefConsumer<this, any>;
+    authProviderName!: OdmdCrossRefConsumer<this, any>;
+
+    wireConsuming() {
+        // Wire consumption from knowledge retrieval service for vector search
+        const ragContracts = this.owner.contracts as RagContracts;
+        const knowledgeRetrievalEnver = ragContracts.ragKnowledgeRetrievalBuild.dev; // Use appropriate env
+        
+        this.vectorSearchProxySubscription = new OdmdCrossRefConsumer(
+            this, 'vector-search-proxy-subscription',
+            knowledgeRetrievalEnver.vectorSearchProxyApi.vectorSearchEndpoint, {
+                defaultIfAbsent: 'default-vector-search-api',
+                trigger: 'no'
+            }
+        );
+
+        this.healthCheckSubscription = new OdmdCrossRefConsumer(
+            this, 'health-check-subscription',
+            knowledgeRetrievalEnver.vectorSearchProxyApi.healthCheckEndpoint, {
+                defaultIfAbsent: 'default-health-check-api',
+                trigger: 'no'
+            }
+        );
+
+        this.searchSchemaSubscription = new OdmdCrossRefConsumer(
+            this, 'search-schema-subscription',
+            knowledgeRetrievalEnver.vectorSearchProxyApi.searchRequestSchema, {
+                defaultIfAbsent: 'default-search-schema',
+                trigger: 'no'
+            }
+        );
+
+        // Wire consumption from user-auth service for authentication
+        const userAuthEnver = ragContracts.userAuth!.envers[0] as RagUserAuthEnver
+        
+        this.authProviderClientId = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderClientId.node.id, userAuthEnver.idProviderClientId, {
+            defaultIfAbsent: 'default-client-id',
+            trigger: 'no'
+        });
+        
+        this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName, {
+            defaultIfAbsent: 'default-provider-name',
+            trigger: 'no'
+        });
+    }
+    
     /**
-     * API Gateway endpoint for AI response generation
-     * Consumed by user interfaces and applications for natural language responses
+     * Generation API and web UI producer
+     * Provides generation endpoints and web interface for client consumption
      */
-    readonly responseGenerationApi: ResponseGenerationApiProducer;
+    readonly generationApi: GenerationApiProducer;
 }
 
 /**
@@ -156,5 +203,9 @@ export class RagGenerationBuild extends OdmdBuild<OdmdEnverCdk> {
 
     get contracts(): RagContracts {
         return super.contracts as RagContracts;
+    }
+
+    wireConsuming() {
+        this.envers.forEach(e => e.wireConsuming());
     }
 } 

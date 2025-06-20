@@ -1,6 +1,7 @@
 import { OdmdBuild, OdmdEnverCdk, SRC_Rev_REF, OdmdCrossRefConsumer, OdmdCrossRefProducer } from "@ondemandenv/contracts-lib-base";
 import type { RagContracts } from "../rag-contracts";
 import { RagEmbeddingEnver } from "./embedding";
+import { RagUserAuthEnver } from "./user-auth";
 
 /**
  * Vector Storage Resources (S3 Buckets + Vector Database)
@@ -58,10 +59,6 @@ export class RagVectorStorageEnver extends OdmdEnverCdk {
     constructor(owner: RagVectorStorageBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
 
-        // Subscribe to embedding storage from embedding service
-        const embeddingEnver = owner.contracts.ragEmbeddingBuild.dev; // Use appropriate env
-        this.embeddingSubscription = new OdmdCrossRefConsumer(this, 'embeddingSubscription', embeddingEnver.embeddingStorage.embeddingsBucket);
-
         // Produce vector storage for knowledge retrieval service
         this.vectorStorage = new VectorStorageProducer(this, 'vector-storage');
     }
@@ -70,7 +67,37 @@ export class RagVectorStorageEnver extends OdmdEnverCdk {
      * S3 bucket subscription to embeddings
      * Polls S3 bucket for embedding JSON files ready for vector storage
      */
-    readonly embeddingSubscription: OdmdCrossRefConsumer<RagVectorStorageEnver, OdmdEnverCdk>;
+    embeddingSubscription!: OdmdCrossRefConsumer<RagVectorStorageEnver, OdmdEnverCdk>;
+
+    // Consuming user-auth identity provider details for vector API authentication
+    authProviderClientId!: OdmdCrossRefConsumer<this, any>;
+    authProviderName!: OdmdCrossRefConsumer<this, any>;
+
+    wireConsuming() {
+        // Wire consumption from embedding service storage resources  
+        const embeddingEnver = (this.owner as RagVectorStorageBuild).contracts.ragEmbeddingBuild.dev; // Use appropriate env
+        this.embeddingSubscription = new OdmdCrossRefConsumer(
+            this, 'embedding-subscription',
+            embeddingEnver.embeddingStorage.embeddingsBucket, {
+                defaultIfAbsent: 'default-embeddings-bucket-name',
+                trigger: 'no'
+            }
+        );
+
+        // Wire consumption from user-auth service for authentication
+        const ragContracts = this.owner.contracts as RagContracts;
+        const userAuthEnver = ragContracts.userAuth!.envers[0] as RagUserAuthEnver
+        
+        this.authProviderClientId = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderClientId.node.id, userAuthEnver.idProviderClientId, {
+            defaultIfAbsent: 'default-client-id',
+            trigger: 'no'
+        });
+        
+        this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName, {
+            defaultIfAbsent: 'default-provider-name',
+            trigger: 'no'
+        });
+    }
 
     /**
      * Vector storage producer
@@ -120,5 +147,9 @@ export class RagVectorStorageBuild extends OdmdBuild<OdmdEnverCdk> {
 
     get contracts(): RagContracts {
         return super.contracts as RagContracts;
+    }
+
+    wireConsuming() {
+        this.envers.forEach(e => e.wireConsuming());
     }
 } 

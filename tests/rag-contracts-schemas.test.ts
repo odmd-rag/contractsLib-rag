@@ -51,35 +51,36 @@ describe('RagContracts Schema Contracts', () => {
         expect(apiProducer.vectorMetadataBucket).toBeDefined();
     });
 
-    test('should have schema contracts for knowledge retrieval API', () => {
+    test('should have schema contracts for vector search proxy API (hybrid architecture)', () => {
         const knowledgeRetrievalDev = ragContracts.ragKnowledgeRetrievalBuild.dev;
-        const apiProducer = knowledgeRetrievalDev.contextRetrievalApi;
+        const apiProducer = knowledgeRetrievalDev.vectorSearchProxyApi;
         
         // Check API Gateway endpoint
-        expect(apiProducer.contextApi).toBeDefined();
+        expect(apiProducer.proxyApi).toBeDefined();
         
-        // Check schema contracts
-        expect(apiProducer.queryUnderstandingRequestSchema).toBeDefined();
-        expect(apiProducer.queryUnderstandingResponseSchema).toBeDefined();
-        expect(apiProducer.contextRetrievalRequestSchema).toBeDefined();
-        expect(apiProducer.contextRetrievalResponseSchema).toBeDefined();
-        expect(apiProducer.contextRankingSchema).toBeDefined();
-        expect(apiProducer.retrievalMetadataSchema).toBeDefined();
+        // Check schema contracts for hybrid proxy architecture
+        expect(apiProducer.vectorSearchEndpoint).toBeDefined();
+        expect(apiProducer.healthCheckEndpoint).toBeDefined();
+        expect(apiProducer.searchRequestSchema).toBeDefined();
+        expect(apiProducer.searchResponseSchema).toBeDefined();
+        expect(apiProducer.homeServerConfig).toBeDefined();
     });
 
-    test('should have schema contracts for response generation API', () => {
+    test('should have schema contracts for generation API', () => {
         const generationDev = ragContracts.ragGenerationBuild.dev;
-        const apiProducer = generationDev.responseGenerationApi;
+        const apiProducer = generationDev.generationApi;
         
-        // Check API Gateway endpoint
+        // Check API Gateway endpoint  
         expect(apiProducer.generationApi).toBeDefined();
         
-        // Check schema contracts
-        expect(apiProducer.chatCompletionRequestSchema).toBeDefined();
-        expect(apiProducer.chatCompletionResponseSchema).toBeDefined();
-        expect(apiProducer.streamingResponseSchema).toBeDefined();
-        expect(apiProducer.generationConfigSchema).toBeDefined();
-        expect(apiProducer.promptTemplateSchema).toBeDefined();
-        expect(apiProducer.generationMetricsSchema).toBeDefined();
+        // Check schema contracts for generation service
+        expect(apiProducer.generationRequestSchema).toBeDefined();
+        expect(apiProducer.generationResponseSchema).toBeDefined();
+        expect(apiProducer.conversationSchema).toBeDefined();
+        expect(apiProducer.feedbackSchema).toBeDefined();
+        
+        // Check web UI components
+        expect(apiProducer.webUiCloudFrontUrl).toBeDefined();
+        expect(apiProducer.webUiS3Bucket).toBeDefined();
     });
 }); 
