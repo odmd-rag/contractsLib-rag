@@ -137,13 +137,42 @@ Services can now deploy in **any order**:
 2. **Embedding Service** → Creates hierarchical roles → ✅ Matches wildcard automatically
 3. **Vector Storage** → Can use same pattern → ✅ Scalable approach
 
+## 🗺️ **Multi-Enver Roadmap**
+
+OndemandEnv's core value is supporting **multiple envers** on different branches with different architectural approaches:
+
+### **Planned Enver Expansions**
+
+#### **Vector Storage Service**
+- ✅ **`dev` Branch**: Home server proxy (implemented)
+- 📋 **`dev-pine` Branch**: Pinecone cloud-native integration
+  - Direct Pinecone SDK integration
+  - Managed vector database service
+  - Production scalability features
+  - Usage-based pricing model
+
+#### **Document Processing Service**
+- ✅ **`dev` Branch**: Pure Lambda serverless (implemented)
+- 📋 **`dev-ecs` Branch**: ECS Fargate hybrid processing
+  - Lambda orchestration + ECS processing
+  - Heavy document processing capabilities
+  - Container-based compute resources
+  - Complex document format support
+
+### **Multi-Enver Implementation Strategy**
+- **Contract Consistency**: Same interface across all envers
+- **Branch Isolation**: Independent deployment per enver
+- **Test Coverage**: Comprehensive testing for all implementations
+- **Documentation**: Architecture-specific guidance per enver
+
 ## Next Steps (Optional Enhancements)
 
 1. **Apply to All Services**: Extend hierarchical naming to vector storage, knowledge retrieval, generation services
-2. **Base Class Enhancement**: Add naming validation to shared base class (when accessible)
-3. **CDK Aspects**: Add compile-time naming validation via CDK Aspects
-4. **Monitoring**: Add CloudWatch dashboards for cross-service access patterns
-5. **Documentation**: Create service-specific naming guides for developers
+2. **Multi-Enver Implementation**: Add `dev-pine` and `dev-ecs` branches with alternative architectures
+3. **Base Class Enhancement**: Add naming validation to shared base class (when accessible)
+4. **CDK Aspects**: Add compile-time naming validation via CDK Aspects
+5. **Monitoring**: Add CloudWatch dashboards for cross-service access patterns
+6. **Documentation**: Create service-specific naming guides for developers
 
 ## Conclusion
 
@@ -189,4 +218,13 @@ All service documentation has been comprehensively updated to reflect the hybrid
 **Status**: Production Ready  
 **Pattern**: Hierarchical IAM Role Naming + Wildcard Conditions + Hybrid Architecture  
 **Services**: All 6 RAG services with home vector server integration  
-**Documentation**: Complete with examples, troubleshooting, and hybrid architecture patterns  
+**Documentation**: Complete with examples, troubleshooting, and hybrid architecture patterns
+
+## 🔗 **Related Documentation**
+
+- [Hybrid RAG Architecture](../.github/HYBRID_RAG_ARCHITECTURE.md)
+- [Multi-Enver Roadmap](../.github/MULTI_ENVER_ROADMAP.md)
+- [Document Lifecycle Architecture](../.github/DOCUMENT_LIFECYCLE_ARCHITECTURE.md)
+- [Home Vector Server](../home-vector-server/README.md)
+- [Hierarchical Naming Convention](./HIERARCHICAL_NAMING_CONVENTION.md)
+- [Hybrid Architecture Test Updates](./HYBRID_ARCHITECTURE_TEST_UPDATES.md)  
