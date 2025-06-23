@@ -4,7 +4,6 @@ import {
     OdmdCrossRefConsumer, OdmdEnverUserAuth
 } from "@ondemandenv/contracts-lib-base";
 import type {RagContracts} from "../rag-contracts";
-import {IOdmdEnver} from "@ondemandenv/contracts-lib-base/lib/model/odmd-enver";
 import {OdmdBuildUserAuth} from "@ondemandenv/contracts-lib-base/lib/repos/__user-auth/odmd-build-user-auth";
 
 export class RagUserAuthBuild extends OdmdBuildUserAuth {

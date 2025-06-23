@@ -184,7 +184,7 @@ export class RagGenerationBuild extends OdmdBuild<OdmdEnverCdk> {
     ownerEmail?: string | undefined;
 
     constructor(scope: RagContracts) {
-        super(scope, 'ragGeneration', scope.githubRepos.ragGeneration);
+        super(scope, 'ragGen', scope.githubRepos.ragGeneration);
     }
 
     protected initializeEnvers(): void {

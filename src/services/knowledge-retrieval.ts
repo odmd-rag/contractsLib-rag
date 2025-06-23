@@ -164,7 +164,7 @@ export class RagKnowledgeRetrievalBuild extends OdmdBuild<OdmdEnverCdk> {
     ownerEmail?: string | undefined;
 
     constructor(scope: RagContracts) {
-        super(scope, 'ragKnowledgeRetrieval', scope.githubRepos.ragKnowledgeRetrieval);
+        super(scope, 'ragRetr', scope.githubRepos.ragKnowledgeRetrieval);
     }
 
     protected initializeEnvers(): void {

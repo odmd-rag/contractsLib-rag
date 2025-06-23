@@ -110,7 +110,7 @@ export class RagDocumentIngestionBuild extends OdmdBuild<OdmdEnverCdk> {
     ownerEmail?: string | undefined;
 
     constructor(scope: RagContracts) {
-        super(scope, 'ragDocumentIngestion', scope.githubRepos.ragDocumentIngestion);
+        super(scope, 'ragIngest', scope.githubRepos.ragDocumentIngestion);
     }
 
     protected initializeEnvers(): void {

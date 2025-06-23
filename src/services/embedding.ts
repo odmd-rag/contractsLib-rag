@@ -6,7 +6,6 @@ import {
     OdmdCrossRefProducer
 } from "@ondemandenv/contracts-lib-base";
 import type {RagContracts} from "../rag-contracts";
-import {RagDocumentProcessingEnver} from "./document-processing";
 
 /**
  * Embedding Storage Resources (S3 Buckets)
@@ -130,7 +129,7 @@ export class RagEmbeddingBuild extends OdmdBuild<OdmdEnverCdk> {
     ownerEmail?: string | undefined;
 
     constructor(scope: RagContracts) {
-        super(scope, 'ragEmbedding', scope.githubRepos.ragEmbedding);
+        super(scope, 'ragEmbed', scope.githubRepos.ragEmbedding);
     }
 
     protected initializeEnvers(): void {

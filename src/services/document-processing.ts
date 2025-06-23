@@ -147,7 +147,7 @@ export class RagDocumentProcessingBuild extends OdmdBuild<OdmdEnverCdk> {
     ownerEmail?: string | undefined;
 
     constructor(scope: RagContracts) {
-        super(scope, 'ragDocumentProcessing', scope.githubRepos.ragDocumentProcessing);
+        super(scope, 'ragProc', scope.githubRepos.ragDocumentProcessing);
     }
 
     protected initializeEnvers(): void {

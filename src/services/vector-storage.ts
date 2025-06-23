@@ -7,7 +7,6 @@ import {
     OdmdEnverUserAuth
 } from "@ondemandenv/contracts-lib-base";
 import type { RagContracts } from "../rag-contracts";
-import { RagEmbeddingEnver } from "./embedding";
 import { RagUserAuthEnver } from "./user-auth";
 
 /**
@@ -181,7 +180,7 @@ export class RagVectorStorageBuild extends OdmdBuild<OdmdEnverCdk> {
     ownerEmail?: string | undefined;
 
     constructor(scope: RagContracts) {
-        super(scope, 'ragVectorStorage', scope.githubRepos.ragVectorStorage);
+        super(scope, 'ragStore', scope.githubRepos.ragVectorStorage);
     }
 
     protected initializeEnvers(): void {
