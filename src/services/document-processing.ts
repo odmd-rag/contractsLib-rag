@@ -37,6 +37,37 @@ export class ProcessedContentStorageProducer extends OdmdCrossRefProducer<OdmdEn
 }
 
 /**
+ * Document Processing Status API Producer
+ * Provides HTTP API endpoints for document processing status tracking
+ */
+export class DocumentProcessingStatusApiProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
+    constructor(owner: OdmdEnverCdk, id: string) {
+        super(owner, id, {
+            children: [
+                {pathPart: 'status-api-endpoint'},        // HTTP API Gateway endpoint
+                {pathPart: 'status-response-schema'}      // Schema for status responses
+            ]
+        });
+    }
+
+    /**
+     * HTTP API Gateway endpoint for document processing status
+     * Pattern: https://{enverId}.ragDocumentProcessing.{domain}/status/{docId}
+     */
+    public get statusApiEndpoint() {
+        return this.children![0]!
+    }
+
+    /**
+     * Schema contract for status response payloads
+     * Defines the data structure for processing status responses
+     */
+    public get statusResponseSchema() {
+        return this.children![1]!
+    }
+}
+
+/**
  * RAG Document Processing Service Enver
  */
 export class RagDocumentProcessingEnver extends OdmdEnverCdk {
@@ -48,6 +79,7 @@ export class RagDocumentProcessingEnver extends OdmdEnverCdk {
         
         // Initialize producers for resources this service creates
         this.processedContentStorage = new ProcessedContentStorageProducer(this, 'processed-content-storage');
+        this.statusApi = new DocumentProcessingStatusApiProducer(this, 'status-api');
         
         // Initialize role ARN producers for cross-service permissions
         this.s3PollerRoleArn = new OdmdCrossRefProducer(this, 's3-poller-role-arn');
@@ -60,6 +92,9 @@ export class RagDocumentProcessingEnver extends OdmdEnverCdk {
 
     // === PRODUCING for embedding service (using OdmdShareOut) ===
     readonly processedContentStorage: ProcessedContentStorageProducer;
+    
+    // === PRODUCING status API for WebUI tracking ===
+    readonly statusApi: DocumentProcessingStatusApiProducer;
     
     // === PRODUCING role ARNs for ingestion service to grant S3 permissions ===
     readonly s3PollerRoleArn: OdmdCrossRefProducer<RagDocumentProcessingEnver>;

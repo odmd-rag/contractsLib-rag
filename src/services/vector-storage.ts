@@ -60,6 +60,37 @@ export class VectorStorageProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
 }
 
 /**
+ * Vector Storage Status API Producer
+ * Provides HTTP API endpoints for vector storage status tracking
+ */
+export class VectorStorageStatusApiProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
+    constructor(owner: OdmdEnverCdk, id: string) {
+        super(owner, id, {
+            children: [
+                {pathPart: 'status-api-endpoint'},        // HTTP API Gateway endpoint
+                {pathPart: 'status-response-schema'}      // Schema for status responses
+            ]
+        });
+    }
+
+    /**
+     * HTTP API Gateway endpoint for vector storage status
+     * Pattern: https://{enverId}.ragVectorStorage.{domain}/status/{docId}
+     */
+    public get statusApiEndpoint() {
+        return this.children![0]!
+    }
+
+    /**
+     * Schema contract for status response payloads
+     * Defines the data structure for vector storage status responses
+     */
+    public get statusResponseSchema() {
+        return this.children![1]!
+    }
+}
+
+/**
  * RAG Vector Storage Service Enver
  */
 export class RagVectorStorageEnver extends OdmdEnverCdk {
@@ -68,6 +99,7 @@ export class RagVectorStorageEnver extends OdmdEnverCdk {
 
         // Produce vector storage for knowledge retrieval service
         this.vectorStorage = new VectorStorageProducer(this, 'vector-storage');
+        this.statusApi = new VectorStorageStatusApiProducer(this, 'status-api');
     }
 
     /**
@@ -119,6 +151,12 @@ export class RagVectorStorageEnver extends OdmdEnverCdk {
      * Provides vector database access for knowledge retrieval service
      */
     readonly vectorStorage: VectorStorageProducer;
+
+    /**
+     * Status API producer for WebUI tracking
+     * Provides HTTP endpoints for vector storage status tracking
+     */
+    readonly statusApi: VectorStorageStatusApiProducer;
 }
 
 /**

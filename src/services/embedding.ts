@@ -43,6 +43,37 @@ export class EmbeddingStorageProducer extends OdmdCrossRefProducer<OdmdEnverCdk>
 }
 
 /**
+ * Embedding Service Status API Producer
+ * Provides HTTP API endpoints for embedding status tracking
+ */
+export class EmbeddingStatusApiProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
+    constructor(owner: OdmdEnverCdk, id: string) {
+        super(owner, id, {
+            children: [
+                {pathPart: 'status-api-endpoint'},        // HTTP API Gateway endpoint
+                {pathPart: 'status-response-schema'}      // Schema for status responses
+            ]
+        });
+    }
+
+    /**
+     * HTTP API Gateway endpoint for embedding status
+     * Pattern: https://{enverId}.ragEmbedding.{domain}/status/{docId}
+     */
+    public get statusApiEndpoint() {
+        return this.children![0]!
+    }
+
+    /**
+     * Schema contract for status response payloads
+     * Defines the data structure for embedding status responses
+     */
+    public get statusResponseSchema() {
+        return this.children![1]!
+    }
+}
+
+/**
  * RAG Embedding Service Enver
  */
 export class RagEmbeddingEnver extends OdmdEnverCdk {
@@ -55,6 +86,7 @@ export class RagEmbeddingEnver extends OdmdEnverCdk {
 
         // Produce embedding storage for vector storage service
         this.embeddingStorage = new EmbeddingStorageProducer(this, 'embedding-storage');
+        this.statusApi = new EmbeddingStatusApiProducer(this, 'status-api');
     }
 
     /**
@@ -68,6 +100,12 @@ export class RagEmbeddingEnver extends OdmdEnverCdk {
      * Provides S3 buckets for embeddings that vector storage service polls
      */
     readonly embeddingStorage: EmbeddingStorageProducer;
+
+    /**
+     * Status API producer for WebUI tracking
+     * Provides HTTP endpoints for embedding status tracking
+     */
+    readonly statusApi: EmbeddingStatusApiProducer;
 }
 
 /**
