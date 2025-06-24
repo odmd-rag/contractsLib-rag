@@ -9,7 +9,7 @@ The RAG system consists of 6 core microservices:
 1. **Document Ingestion** - Handles document upload and initial processing
 2. **Document Processing** - Parses and preprocesses documents
 3. **Embedding** - Generates vector embeddings from processed content
-4. **Vector Storage** - Manages vector database operations
+4. **Vector Storage** - Manages vector database operations  
 5. **Knowledge Retrieval** - Retrieves relevant context for queries
 6. **Generation** - Generates responses using LLMs and retrieved context
 
@@ -44,6 +44,7 @@ contractsLib-rag/
   - S3 pre-signed URL generation
   - Document validation and quarantine
   - EventBridge event publishing
+  - Web UI for document tracking
 
 ### Document Processing Service  
 - **Repository**: `rag-document-processing-service`
@@ -51,23 +52,26 @@ contractsLib-rag/
 - **Key Features**:
   - Multi-format document parsing (PDF, DOCX, TXT, etc.)
   - Text extraction and cleaning
-  - Kinesis stream management for parallel processing
+  - Chunk generation with sentence boundary detection
+  - S3 storage for processed content
 
 ### Embedding Service
 - **Repository**: `rag-embedding-service` 
-- **Purpose**: Generate vector embeddings
+- **Purpose**: Generate vector embeddings using AWS Bedrock
 - **Key Features**:
-  - Integration with embedding models (OpenAI, HuggingFace, etc.)
-  - Batch processing capabilities
-  - Embedding quality validation
+  - AWS Bedrock Titan Embed v2 integration
+  - S3 polling for processed content
+  - SQS-based batch processing
+  - Embedding storage in S3
 
 ### Vector Storage Service
 - **Repository**: `rag-vector-storage-service`
 - **Purpose**: Vector database operations
 - **Key Features**:
-  - Vector database management (Pinecone, OpenSearch, etc.)
+  - Vector database management (configurable backends)
   - Indexing and similarity search
   - Metadata management
+  - Can integrate with home vector server for development
 
 ### Knowledge Retrieval Service
 - **Repository**: `rag-knowledge-retrieval-service`
@@ -81,21 +85,58 @@ contractsLib-rag/
 - **Repository**: `rag-generation-service`
 - **Purpose**: Generate responses using LLMs
 - **Key Features**:
-  - LLM integration (OpenAI, Anthropic, etc.)
+  - LLM integration (OpenAI, Anthropic, Bedrock, etc.)
   - Prompt engineering and context injection
   - Response post-processing
 
 ## Data Flow
 
+### Main Pipeline (OndemandEnv Services)
 ```
-User Query
+Document Upload (User)
     ↓
-Knowledge Retrieval ← Vector Storage ← Embedding ← Document Processing ← Document Ingestion
-    ↓                                                     ↑
-Generation                                               User Upload
+Document Ingestion → Document Processing → Embedding → Vector Storage
+    ↓                        ↓                ↓            ↓
+EventBridge            S3 Processed      S3 Embeddings  Vector DB
+                       Content Bucket     Bucket         (various backends)
+                                                            ↓
+User Query → Knowledge Retrieval ←←←←←←←←←←←←←←←←←←←←←←←←←←←←
     ↓
-Response
+Generation → Response
 ```
+
+### Development Tools (Separate)
+```
+Home Vector Server (local development only)
+- Standalone Docker container
+- For local testing and development
+- NOT part of the main ondemandenv.dev pipeline
+- Can be integrated via Vector Storage Service for dev environments
+```
+
+## Key Architectural Principles
+
+### Service Communication
+- **S3-based**: Services communicate through S3 buckets for reliable data transfer
+- **Event-driven**: EventBridge for loose coupling and async processing
+- **Contract-based**: All dependencies defined through contractsLib contracts
+- **No Direct Dependencies**: Services don't directly call each other
+
+### Data Storage Pattern
+```
+Document Ingestion → S3 Raw Documents
+       ↓
+Document Processing → S3 Processed Content (JSON chunks)
+       ↓  
+Embedding Service → S3 Embeddings (JSON vectors)
+       ↓
+Vector Storage → Vector Database (various backends)
+```
+
+### Authentication
+- **Centralized**: User Auth service provides JWT tokens
+- **Consumed**: All services with status APIs consume auth contracts
+- **Hierarchical**: JWT authentication for web UIs and API access
 
 ## Environment Management
 
@@ -108,8 +149,26 @@ Each service has two environments:
 The system uses EventBridge for loose coupling between services:
 - **Document Ingestion** publishes `Document Validated` events
 - **Document Processing** subscribes to validation events and publishes `Document Processed` events  
-- **Embedding** subscribes to processing events and publishes `Embeddings Generated` events
-- **Vector Storage** subscribes to embedding events for indexing
+- **Embedding** polls S3 for processed content (no direct events)
+- **Vector Storage** polls S3 for embeddings (no direct events)
+
+## Home Vector Server vs Main Pipeline
+
+**Important Distinction**:
+
+### Main OndemandEnv Pipeline
+- Production-ready serverless services
+- AWS-managed infrastructure
+- Automatic scaling and high availability
+- S3-based service communication
+- Contract-defined dependencies
+
+### Home Vector Server
+- Local development tool
+- Docker-based standalone service
+- For testing and development only
+- NOT part of the ondemandenv.dev architecture
+- Can be integrated via Vector Storage Service configuration
 
 ## Getting Started
 
@@ -139,7 +198,23 @@ The system uses EventBridge for loose coupling between services:
    // Access service builds
    const docIngestion = ragContracts.ragDocumentIngestionBuild;
    const docProcessing = ragContracts.ragDocumentProcessingBuild;
+   const embedding = ragContracts.ragEmbeddingBuild;
+   const vectorStorage = ragContracts.ragVectorStorageBuild;
    ```
+
+## Service Naming Convention
+
+All services follow consistent naming patterns:
+
+### CDK Construct Prefixes
+- **Document Ingestion**: `Ing` (e.g., `IngValidationQueue`)
+- **Document Processing**: `Proc` (e.g., `ProcBasicQueue`) 
+- **Embedding**: `Emb` (e.g., `EmbProcessingQueue`)
+- **Vector Storage**: `Vec` (e.g., `VecIndexQueue`)
+- **Knowledge Retrieval**: `Ret` (e.g., `RetSearchQueue`)
+- **Generation**: `Gen` (e.g., `GenResponseQueue`)
+
+This ensures clear resource identification and avoids naming conflicts.
 
 ## Testing
 

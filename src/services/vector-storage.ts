@@ -13,8 +13,8 @@ import { RagUserAuthEnver } from "./user-auth";
  * Vector Storage Resources (S3 Buckets + Vector Database)
  * Provides vector database and storage for vector search service consumption
  */
-export class VectorStorageProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
-    constructor(owner: OdmdEnverCdk, id: string) {
+export class VectorStorageProducer extends OdmdCrossRefProducer<RagVectorStorageEnver> {
+    constructor(owner: RagVectorStorageEnver, id: string) {
         super(owner, id, {
             children: [
                 {pathPart: 'vector-database-endpoint'},     // Vector database endpoint (e.g., Pinecone, Weaviate)
@@ -62,8 +62,8 @@ export class VectorStorageProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
  * Vector Storage Status API Producer
  * Provides HTTP API endpoints for vector storage status tracking
  */
-export class VectorStorageStatusApiProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
-    constructor(owner: OdmdEnverCdk, id: string) {
+export class VectorStorageStatusApiProducer extends OdmdCrossRefProducer<RagVectorStorageEnver> {
+    constructor(owner: RagVectorStorageEnver, id: string) {
         super(owner, id, {
             children: [
                 {pathPart: 'status-api-endpoint'},        // HTTP API Gateway endpoint
@@ -129,15 +129,9 @@ export class RagVectorStorageEnver extends OdmdEnverCdk {
         const ragContracts = this.owner.contracts as RagContracts;
         const userAuthEnver = ragContracts.userAuth!.envers[0] as RagUserAuthEnver
         
-        this.authProviderClientId = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderClientId.node.id, userAuthEnver.idProviderClientId, {
-            defaultIfAbsent: 'default-client-id',
-            trigger: 'no'
-        });
+        this.authProviderClientId = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderClientId.node.id, userAuthEnver.idProviderClientId);
         
-        this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName, {
-            defaultIfAbsent: 'default-provider-name',
-            trigger: 'no'
-        });
+        this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName);
         
         this.homeServerDomain = new OdmdCrossRefConsumer(this, userAuthEnver.homeServerDomainName.node.id, userAuthEnver.homeServerDomainName, {
             defaultIfAbsent: 'https://localhost:3000',

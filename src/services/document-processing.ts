@@ -7,8 +7,8 @@ import { RagDocumentIngestionEnver } from "./document-ingestion";
  * Provides S3 buckets for processed content that embedding service polls
  * Replaces EventBridge with S3 polling architecture
  */
-export class ProcessedContentStorageProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
-    constructor(owner: OdmdEnverCdk, id: string) {
+export class ProcessedContentStorageProducer extends OdmdCrossRefProducer<RagDocumentProcessingEnver> {
+    constructor(owner: RagDocumentProcessingEnver, id: string) {
         super(owner, id, {
             children: [
                 {pathPart: 'processed-content-bucket'},     // S3 bucket for processed content JSON files
@@ -40,8 +40,8 @@ export class ProcessedContentStorageProducer extends OdmdCrossRefProducer<OdmdEn
  * Document Processing Status API Producer
  * Provides HTTP API endpoints for document processing status tracking
  */
-export class DocumentProcessingStatusApiProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
-    constructor(owner: OdmdEnverCdk, id: string) {
+export class DocumentProcessingStatusApiProducer extends OdmdCrossRefProducer<RagDocumentProcessingEnver> {
+    constructor(owner: RagDocumentProcessingEnver, id: string) {
         super(owner, id, {
             children: [
                 {pathPart: 'status-api-endpoint'},        // HTTP API Gateway endpoint

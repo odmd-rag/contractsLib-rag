@@ -6,15 +6,14 @@ import {
     OdmdCrossRefProducer, OdmdEnverUserAuth
 } from "@ondemandenv/contracts-lib-base";
 import type { RagContracts } from "../rag-contracts";
-import { RagKnowledgeRetrievalEnver } from "./knowledge-retrieval";
 import { RagUserAuthEnver } from "./user-auth";
 
 /**
  * Generation API Producer (API Gateway + Lambda + WebUI)
  * Provides generation endpoints and web interface for user consumption
  */
-export class GenerationApiProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
-    constructor(owner: OdmdEnverCdk, id: string) {
+export class GenerationApiProducer extends OdmdCrossRefProducer<RagGenerationEnver> {
+    constructor(owner: RagGenerationEnver, id: string) {
         super(owner, id, {
             children: [
                 {
@@ -144,15 +143,9 @@ export class RagGenerationEnver extends OdmdEnverCdk {
         // Wire consumption from user-auth service for authentication
         const userAuthEnver = ragContracts.userAuth!.envers[0] as RagUserAuthEnver
         
-        this.authProviderClientId = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderClientId.node.id, userAuthEnver.idProviderClientId, {
-            defaultIfAbsent: 'default-client-id',
-            trigger: 'no'
-        });
+        this.authProviderClientId = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderClientId.node.id, userAuthEnver.idProviderClientId);
         
-        this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName, {
-            defaultIfAbsent: 'default-provider-name',
-            trigger: 'no'
-        });
+        this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName);
     }
     
     /**

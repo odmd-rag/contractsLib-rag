@@ -70,15 +70,9 @@ export class RagDocumentIngestionEnver extends OdmdEnverCdk {
         const ragContracts = this.owner.contracts as RagContracts;
         const userAuthEnver = ragContracts.userAuth!.envers[0] as RagUserAuthEnver
         
-        this.authProviderClientId = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderClientId.node.id, userAuthEnver.idProviderClientId, {
-            defaultIfAbsent: 'default-client-id',
-            trigger: 'no'
-        });
+        this.authProviderClientId = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderClientId.node.id, userAuthEnver.idProviderClientId);
         
-        this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName, {
-            defaultIfAbsent: 'default-provider-name',
-            trigger: 'no'
-        });
+        this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName);
     }
 
 

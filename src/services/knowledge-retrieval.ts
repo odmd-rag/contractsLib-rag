@@ -13,8 +13,8 @@ import { RagUserAuthEnver } from "./user-auth";
  * Vector Search Proxy API Producer (API Gateway + Lambda)
  * Provides vector search proxy endpoints that forward to home server
  */
-export class VectorSearchProxyApiProducer extends OdmdCrossRefProducer<OdmdEnverCdk> {
-    constructor(owner: OdmdEnverCdk, id: string) {
+export class VectorSearchProxyApiProducer extends OdmdCrossRefProducer<RagKnowledgeRetrievalEnver> {
+    constructor(owner: RagKnowledgeRetrievalEnver, id: string) {
         super(owner, id, {
             children: [
                 {
@@ -109,15 +109,9 @@ export class RagKnowledgeRetrievalEnver extends OdmdEnverCdk {
         const ragContracts = this.owner.contracts as RagContracts;
         const userAuthEnver = ragContracts.userAuth!.envers[0] as RagUserAuthEnver
         
-        this.authProviderClientId = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderClientId.node.id, userAuthEnver.idProviderClientId, {
-            defaultIfAbsent: 'default-client-id',
-                trigger: 'no'
-        });
+        this.authProviderClientId = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderClientId.node.id, userAuthEnver.idProviderClientId);
 
-        this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName, {
-            defaultIfAbsent: 'default-provider-name',
-                trigger: 'no'
-        });
+        this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName);
         
         this.homeServerDomain = new OdmdCrossRefConsumer(this, userAuthEnver.homeServerDomainName.node.id, userAuthEnver.homeServerDomainName, {
             defaultIfAbsent: 'https://localhost:3000',
