@@ -84,11 +84,14 @@ export class RagContracts extends OndemandContracts<AccountsRag, GithubReposRag,
         }
 
         // Wire all consuming relationships
-        this.ragDocumentIngestionBuild.wireConsuming();
+        // Note: Document ingestion must be wired last since it consumes status APIs from other services
         this.ragDocumentProcessingBuild.wireConsuming();
         this.ragVectorStorageBuild.wireConsuming();
         this.ragKnowledgeRetrievalBuild.wireConsuming();
         (this.userAuth!.envers[0] as RagUserAuthEnver).wireConsuming();
+        
+        // Wire document ingestion last since it consumes from other services
+        this.ragDocumentIngestionBuild.wireConsuming();
 
         this.odmdBuilds.forEach(build => {
             console.log(build.buildId)

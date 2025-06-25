@@ -1,6 +1,6 @@
 {
   "name": "@odmd-rag/contracts-lib-rag",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "description": "RAG System Contracts Library for OndemandEnv Platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -20,11 +20,7 @@
     "start": "node lib/app.js",
     "package": "npm run build && npm pack",
     "ci:build": "bash scripts/build.sh",
-    "prepare": "npm run build",
-    "contractsLibRag-cdk-ls": "tsc --build && cross-env ODMD_build_id=contractsLibRag cdk ls --show-dependencies",
-    "contractsLibRag-cdk-ls-deps": "tsc --build && cross-env ODMD_build_id=contractsLibRag cdk ls --show-dependencies",
-    "contractsLibRag-cdk-synth": "tsc --build && cross-env ODMD_build_id=contractsLibRag cdk synth --all",
-    "contractsLibRag-cdk-deploy": "tsc --build && cross-env ODMD_build_id=contractsLibRag cdk deploy --all"
+    "prepare": "npm run build"
   },
   "dependencies": {
     "@ondemandenv/contracts-lib-base": "0.0.72",

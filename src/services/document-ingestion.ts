@@ -6,8 +6,11 @@ import {
     OdmdCrossRefConsumer,
     OdmdEnverUserAuth
 } from '@ondemandenv/contracts-lib-base';
-import  { RagContracts } from "../rag-contracts";
-import { RagUserAuthEnver } from "./user-auth";
+import {RagContracts} from "../rag-contracts";
+import {RagUserAuthEnver} from "./user-auth";
+import {RagDocumentProcessingEnver} from "./document-processing";
+import {RagEmbeddingEnver} from "./embedding";
+import {RagVectorStorageEnver} from "./vector-storage";
 
 /**
  * Document Storage Resource Producer (S3)
@@ -46,33 +49,65 @@ export class DocumentStorageResourceProducer extends OdmdCrossRefProducer<RagDoc
 export class RagDocumentIngestionEnver extends OdmdEnverCdk {
     constructor(owner: RagDocumentIngestionBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
-        
+
         // Initialize S3 storage resources for downstream services to poll
         this.documentStorageResources = new DocumentStorageResourceProducer(this, 'doc-storage-resources');
-        
+
         // Initialize auth callback URLs for user-auth service to consume
         this.authCallbackUrl = new OdmdCrossRefProducer(this, 'auth-callback-url');
         this.logoutUrl = new OdmdCrossRefProducer(this, 'logout-url');
     }
 
     readonly documentStorageResources: DocumentStorageResourceProducer;
-    
+
     // Auth callback URLs produced for user-auth service to consume
     readonly authCallbackUrl: OdmdCrossRefProducer<RagDocumentIngestionEnver>;
     readonly logoutUrl: OdmdCrossRefProducer<RagDocumentIngestionEnver>;
-    
+
     // Consuming user-auth identity provider details for document authentication (single references since one auth enver)
     authProviderClientId!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
     authProviderName!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
-    
+
+    // Consuming status API endpoints from other services for web UI configuration
+    processingStatusApiEndpoint!: OdmdCrossRefConsumer<this, RagDocumentProcessingEnver>;
+    embeddingStatusApiEndpoint!: OdmdCrossRefConsumer<this, RagEmbeddingEnver>;
+    vectorStorageStatusApiEndpoint!: OdmdCrossRefConsumer<this, RagVectorStorageEnver>;
+
     wireConsuming() {
         // Wire consumption from user-auth service for authentication
         const ragContracts = this.owner.contracts as RagContracts;
         const userAuthEnver = ragContracts.userAuth!.envers[0] as RagUserAuthEnver
-        
+
         this.authProviderClientId = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderClientId.node.id, userAuthEnver.idProviderClientId);
-        
+
         this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName);
+
+        const processingEnver = ragContracts.ragDocumentProcessingBuild.envers.find(e =>
+            e.ingestionEnver == this
+        );
+        if (processingEnver)
+            this.processingStatusApiEndpoint = new OdmdCrossRefConsumer(
+                this, 'processing-status-api',
+                processingEnver.statusApi.statusApiEndpoint
+            );
+
+        const embeddingEnver = ragContracts.ragEmbeddingBuild.envers.find(e =>
+            e.processedContentSubscription.producer.owner.ingestionEnver == this
+        );
+        if (embeddingEnver)
+            this.embeddingStatusApiEndpoint = new OdmdCrossRefConsumer(
+                this, 'embedding-status-api',
+                embeddingEnver.statusApi.statusApiEndpoint
+            );
+        const vectorStorageEnver = ragContracts.ragVectorStorageBuild.envers.find(e =>
+            e.embeddingSubscription.producer.owner.processedContentSubscription.producer.owner.ingestionEnver == this
+        );
+
+        if (vectorStorageEnver)
+            this.vectorStorageStatusApiEndpoint = new OdmdCrossRefConsumer(
+                this, 'vector-storage-status-api',
+                vectorStorageEnver.statusApi.statusApiEndpoint
+            );
     }
 
 
@@ -124,7 +159,7 @@ export class RagDocumentIngestionBuild extends OdmdBuild<OdmdEnverCdk> {
     get contracts(): RagContracts {
         return super.contracts as RagContracts;
     }
-    
+
     wireConsuming() {
         this.envers.forEach(e => e.wireConsuming());
     }
