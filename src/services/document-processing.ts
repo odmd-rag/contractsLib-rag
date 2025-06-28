@@ -4,41 +4,33 @@ import { RagDocumentIngestionEnver } from "./document-ingestion";
 
 /**
  * Processed Content Storage Resources (S3 Buckets)
- * Provides S3 buckets for processed content that embedding service polls
- * Replaces EventBridge with S3 polling architecture
+ * Provides S3 bucket for processed content with status-in-metadata pattern
+ * Status tracking is now embedded in object metadata instead of separate bucket
  */
 export class ProcessedContentStorageProducer extends OdmdCrossRefProducer<RagDocumentProcessingEnver> {
     constructor(owner: RagDocumentProcessingEnver, id: string) {
         super(owner, id, {
             children: [
-                {pathPart: 'processed-content-bucket'},     // S3 bucket for processed content JSON files
-                {pathPart: 'processing-status-bucket'}      // S3 bucket for processing status/completion files
+                {pathPart: 'processed-content-bucket'}     // S3 bucket for processed content JSON files with status metadata
             ]
         });
     }
 
     /**
-     * S3 bucket for processed content files
-     * Contains JSON files with processed document content and chunks
-     * Consumed by embedding service via S3 polling
+     * S3 bucket for processed content files with status metadata
+     * Contains JSON files with processed document content, chunks, and status in object metadata
+     * Status tracking uses metadata keys: 'processing-status', 'placeholder', 'document-id', etc.
+     * Consumed by embedding service via S3 notifications or polling
      */
     public get processedContentBucket() {
         return this.children![0]!
-    }
-
-    /**
-     * S3 bucket for processing status files
-     * Contains JSON files with processing completion status and metrics
-     * Used for monitoring and debugging
-     */
-    public get processingStatusBucket() {
-        return this.children![1]!
     }
 }
 
 /**
  * Document Processing Status API Producer
  * Provides HTTP API endpoints for document processing status tracking
+ * Status is retrieved from S3 object metadata instead of separate status bucket
  */
 export class DocumentProcessingStatusApiProducer extends OdmdCrossRefProducer<RagDocumentProcessingEnver> {
     constructor(owner: RagDocumentProcessingEnver, id: string) {
@@ -53,6 +45,7 @@ export class DocumentProcessingStatusApiProducer extends OdmdCrossRefProducer<Ra
     /**
      * HTTP API Gateway endpoint for document processing status
      * Pattern: https://{enverId}.ragDocumentProcessing.{domain}/status/{docId}
+     * Status retrieved from S3 object metadata
      */
     public get statusApiEndpoint() {
         return this.children![0]!
@@ -60,7 +53,7 @@ export class DocumentProcessingStatusApiProducer extends OdmdCrossRefProducer<Ra
 
     /**
      * Schema contract for status response payloads
-     * Defines the data structure for processing status responses
+     * Defines the data structure for processing status responses from S3 metadata
      */
     public get statusResponseSchema() {
         return this.children![1]!

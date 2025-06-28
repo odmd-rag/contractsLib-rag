@@ -11,41 +11,33 @@ import {RagDocumentProcessingEnver} from "./document-processing";
 
 /**
  * Embedding Storage Resources (S3 Buckets)
- * Provides S3 buckets for embeddings that vector storage service polls
- * Replaces EventBridge with S3 polling architecture
+ * Provides S3 bucket for embeddings with status-in-metadata pattern
+ * Status tracking is now embedded in object metadata instead of separate bucket
  */
 export class EmbeddingStorageProducer extends OdmdCrossRefProducer<RagEmbeddingEnver> {
     constructor(owner: RagEmbeddingEnver, id: string) {
         super(owner, id, {
             children: [
-                {pathPart: 'embeddings-bucket'},           // S3 bucket for embedding JSON files
-                {pathPart: 'embedding-status-bucket'}      // S3 bucket for embedding status/completion files
+                {pathPart: 'embeddings-bucket'}           // S3 bucket for embedding JSON files with status metadata
             ]
         });
     }
 
     /**
-     * S3 bucket for embedding files
-     * Contains JSON files with generated embeddings and metadata
-     * Consumed by vector storage service via S3 polling
+     * S3 bucket for embedding files with status metadata
+     * Contains JSON files with generated embeddings, metadata, and status in object metadata
+     * Status tracking uses metadata keys: 'processing-status', 'placeholder', 'chunk-id', etc.
+     * Consumed by vector storage service via S3 notifications or polling
      */
     public get embeddingsBucket() {
         return this.children![0]!
-    }
-
-    /**
-     * S3 bucket for embedding status files
-     * Contains JSON files with embedding completion status and metrics
-     * Used for monitoring and debugging
-     */
-    public get embeddingStatusBucket() {
-        return this.children![1]!
     }
 }
 
 /**
  * Embedding Service Status API Producer
  * Provides HTTP API endpoints for embedding status tracking
+ * Status is retrieved from S3 object metadata instead of separate status bucket
  */
 export class EmbeddingStatusApiProducer extends OdmdCrossRefProducer<RagEmbeddingEnver> {
     constructor(owner: RagEmbeddingEnver, id: string) {
@@ -60,6 +52,7 @@ export class EmbeddingStatusApiProducer extends OdmdCrossRefProducer<RagEmbeddin
     /**
      * HTTP API Gateway endpoint for embedding status
      * Pattern: https://{enverId}.ragEmbedding.{domain}/status/{docId}
+     * Status retrieved from S3 object metadata
      */
     public get statusApiEndpoint() {
         return this.children![0]!
@@ -67,7 +60,7 @@ export class EmbeddingStatusApiProducer extends OdmdCrossRefProducer<RagEmbeddin
 
     /**
      * Schema contract for status response payloads
-     * Defines the data structure for embedding status responses
+     * Defines the data structure for embedding status responses from S3 metadata
      */
     public get statusResponseSchema() {
         return this.children![1]!
@@ -106,14 +99,15 @@ export class RagEmbeddingEnver extends OdmdEnverCdk {
     }
 
     /**
-     * S3 storage producer for embeddings
-     * Provides S3 buckets for embeddings that vector storage service polls
+     * S3 storage producer for embeddings with status metadata
+     * Provides S3 bucket for embeddings that vector storage service polls
+     * Status tracking embedded in object metadata
      */
     readonly embeddingStorage: EmbeddingStorageProducer;
 
     /**
      * Status API producer for WebUI tracking
-     * Provides HTTP endpoints for embedding status tracking
+     * Provides HTTP endpoints for embedding status tracking from S3 metadata
      */
     readonly statusApi: EmbeddingStatusApiProducer;
 }

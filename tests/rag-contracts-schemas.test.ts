@@ -18,23 +18,26 @@ describe('RagContracts Schema Contracts', () => {
         expect(userAuthEnver.idProviderClientId).toBeDefined();
     });
 
-    test('should have schema contracts for document processing events and streams', () => {
+    test('should have schema contracts for document processing with status-in-metadata', () => {
         const docProcessingDev = ragContracts.ragDocumentProcessingBuild.dev;
         
-        // Check processed content events
+        // Check processed content storage with metadata status
         const eventProducer = docProcessingDev.processedContentStorage;
         expect(eventProducer.processedContentBucket).toBeDefined();
-        expect(eventProducer.processedContentBucket).toBeDefined();
+        
+        // Status tracking now embedded in S3 object metadata
+        // No separate status bucket - status in processedContentBucket metadata
     });
 
-    test('should have schema contracts for embedding events', () => {
+    test('should have schema contracts for embedding with status-in-metadata', () => {
         const embeddingDev = ragContracts.ragEmbeddingBuild.dev;
         const eventProducer = embeddingDev.embeddingStorage;
         
-        // Check EventBridge bus endpoint
+        // Check embeddings bucket with metadata status
         expect(eventProducer.embeddingsBucket).toBeDefined();
-        expect(eventProducer.embeddingStatusBucket).toBeDefined();
-
+        
+        // Status tracking now embedded in S3 object metadata
+        // No separate embeddingStatusBucket - status in embeddingsBucket metadata
     });
 
     test('should have schema contracts for vector storage API', () => {
