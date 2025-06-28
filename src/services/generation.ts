@@ -17,16 +17,16 @@ export class GenerationApiProducer extends OdmdCrossRefProducer<RagGenerationEnv
         super(owner, id, {
             children: [
                 {
-                    pathPart: 'generation-api',             // API Gateway for generation
+                    pathPart: 'generation-api',
                     children: [
-                        {pathPart: 'generation-request-schema'},     // Schema for generation requests
-                        {pathPart: 'generation-response-schema'},    // Schema for generation responses
-                        {pathPart: 'conversation-schema'},           // Schema for conversation management
-                        {pathPart: 'feedback-schema'}                // Schema for response feedback
+                        {pathPart: 'generation-request-schema'},
+                        {pathPart: 'generation-response-schema'},
+                        {pathPart: 'conversation-schema'},
+                        {pathPart: 'feedback-schema'}
                     ]
                 },
-                {pathPart: 'web-ui-cloudfront-url'},       // CloudFront URL for web interface
-                {pathPart: 'web-ui-s3-bucket'}             // S3 bucket for web UI assets
+                {pathPart: 'web-ui-cloudfront-url'},
+                {pathPart: 'web-ui-s3-bucket'}
             ]
         });
     }
@@ -95,7 +95,6 @@ export class RagGenerationEnver extends OdmdEnverCdk {
     constructor(owner: RagGenerationBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
         
-        // Produce generation API and web UI for client consumption
         this.generationApi = new GenerationApiProducer(this, 'generation-api');
     }
 
@@ -107,14 +106,12 @@ export class RagGenerationEnver extends OdmdEnverCdk {
     healthCheckSubscription!: OdmdCrossRefConsumer<RagGenerationEnver, OdmdEnverCdk>;
     searchSchemaSubscription!: OdmdCrossRefConsumer<RagGenerationEnver, OdmdEnverCdk>;
 
-    // Auth provider subscriptions
     authProviderClientId!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
     authProviderName!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
 
     wireConsuming() {
-        // Wire consumption from knowledge retrieval service for vector search
         const ragContracts = this.owner.contracts as RagContracts;
-        const knowledgeRetrievalEnver = ragContracts.ragKnowledgeRetrievalBuild.dev; // Use appropriate env
+        const knowledgeRetrievalEnver = ragContracts.ragKnowledgeRetrievalBuild.dev;
         
         this.vectorSearchProxySubscription = new OdmdCrossRefConsumer(
             this, 'vector-search-proxy-subscription',
@@ -140,7 +137,6 @@ export class RagGenerationEnver extends OdmdEnverCdk {
             }
         );
 
-        // Wire consumption from user-auth service for authentication
         const userAuthEnver = ragContracts.userAuth!.envers[0] as RagUserAuthEnver
         
         this.authProviderClientId = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderClientId.node.id, userAuthEnver.idProviderClientId);

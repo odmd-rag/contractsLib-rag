@@ -18,10 +18,10 @@ export class VectorStorageProducer extends OdmdCrossRefProducer<RagVectorStorage
     constructor(owner: RagVectorStorageEnver, id: string) {
         super(owner, id, {
             children: [
-                {pathPart: 'vector-database-endpoint'},     // Vector database endpoint (e.g., Pinecone, Weaviate)
-                {pathPart: 'vector-index-name'},            // Vector index/collection name
-                {pathPart: 'vector-metadata-bucket'},       // S3 bucket for vector metadata and status
-                {pathPart: 'vector-backup-bucket'}          // S3 bucket for vector database backups
+                {pathPart: 'vector-database-endpoint'},
+                {pathPart: 'vector-index-name'},
+                {pathPart: 'vector-metadata-bucket'},
+                {pathPart: 'vector-backup-bucket'}
             ]
         });
     }
@@ -67,8 +67,8 @@ export class VectorStorageStatusApiProducer extends OdmdCrossRefProducer<RagVect
     constructor(owner: RagVectorStorageEnver, id: string) {
         super(owner, id, {
             children: [
-                {pathPart: 'status-api-endpoint'},        // HTTP API Gateway endpoint
-                {pathPart: 'status-response-schema'}      // Schema for status responses
+                {pathPart: 'status-api-endpoint'},
+                {pathPart: 'status-response-schema'}
             ]
         });
     }
@@ -97,7 +97,6 @@ export class RagVectorStorageEnver extends OdmdEnverCdk {
     constructor(owner: RagVectorStorageBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
 
-        // Produce vector storage for knowledge retrieval service
         this.vectorStorage = new VectorStorageProducer(this, 'vector-storage');
         this.statusApi = new VectorStorageStatusApiProducer(this, 'status-api');
     }
@@ -108,22 +107,18 @@ export class RagVectorStorageEnver extends OdmdEnverCdk {
      */
     embeddingSubscription!: OdmdCrossRefConsumer<RagVectorStorageEnver, RagEmbeddingEnver>;
 
-    // Consuming user-auth identity provider details for vector API authentication
     authProviderClientId!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
     authProviderName!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
     
-    // Consuming home server domain for direct HTTP integration
     homeServerDomain!: OdmdCrossRefConsumer<this, RagUserAuthEnver>;
 
     wireConsuming() {
-        // Wire consumption from embedding service storage resources  
-        const embeddingEnver = (this.owner as RagVectorStorageBuild).contracts.ragEmbeddingBuild.dev; // Use appropriate env
+        const embeddingEnver = (this.owner as RagVectorStorageBuild).contracts.ragEmbeddingBuild.dev;
         this.embeddingSubscription = new OdmdCrossRefConsumer(
             this, 'embedding-subscription',
             embeddingEnver.embeddingStorage.embeddingsBucket
         );
 
-        // Wire consumption from user-auth service for authentication
         const ragContracts = this.owner.contracts as RagContracts;
         const userAuthEnver = ragContracts.userAuth!.envers[0] as RagUserAuthEnver
         

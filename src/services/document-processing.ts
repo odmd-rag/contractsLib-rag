@@ -11,7 +11,7 @@ export class ProcessedContentStorageProducer extends OdmdCrossRefProducer<RagDoc
     constructor(owner: RagDocumentProcessingEnver, id: string) {
         super(owner, id, {
             children: [
-                {pathPart: 'processed-content-bucket'}     // S3 bucket for processed content JSON files with status metadata
+                {pathPart: 'processed-content-bucket'}
             ]
         });
     }
@@ -20,7 +20,7 @@ export class ProcessedContentStorageProducer extends OdmdCrossRefProducer<RagDoc
      * S3 bucket for processed content files with status metadata
      * Contains JSON files with processed document content, chunks, and status in object metadata
      * Status tracking uses metadata keys: 'processing-status', 'placeholder', 'document-id', etc.
-     * Consumed by embedding service via S3 notifications or polling
+     * Consumed by embedding service via S3 event notifications
      */
     public get processedContentBucket() {
         return this.children![0]!
@@ -36,8 +36,8 @@ export class DocumentProcessingStatusApiProducer extends OdmdCrossRefProducer<Ra
     constructor(owner: RagDocumentProcessingEnver, id: string) {
         super(owner, id, {
             children: [
-                {pathPart: 'status-api-endpoint'},        // HTTP API Gateway endpoint
-                {pathPart: 'status-response-schema'}      // Schema for status responses
+                {pathPart: 'status-api-endpoint'},
+                {pathPart: 'status-response-schema'}
             ]
         });
     }
@@ -70,31 +70,18 @@ export class RagDocumentProcessingEnver extends OdmdEnverCdk {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
         this.ingestionEnver = ingestionEnver;
         
-        // Initialize producers for resources this service creates
         this.processedContentStorage = new ProcessedContentStorageProducer(this, 'processed-content-storage');
         this.statusApi = new DocumentProcessingStatusApiProducer(this, 'status-api');
-        
-        // Initialize role ARN producers for cross-service permissions
-        this.s3PollerRoleArn = new OdmdCrossRefProducer(this, 's3-poller-role-arn');
-        this.documentProcessorRoleArn = new OdmdCrossRefProducer(this, 'document-processor-role-arn');
     }
 
-    // === CONSUMING from ingestion service (using getSharedValue) ===
     documentBucket!: OdmdCrossRefConsumer<this, RagDocumentIngestionEnver>;
     quarantineBucket!: OdmdCrossRefConsumer<this, RagDocumentIngestionEnver>;
 
-    // === PRODUCING for embedding service (using OdmdShareOut) ===
     readonly processedContentStorage: ProcessedContentStorageProducer;
     
-    // === PRODUCING status API for WebUI tracking ===
     readonly statusApi: DocumentProcessingStatusApiProducer;
-    
-    // === PRODUCING role ARNs for ingestion service to grant S3 permissions ===
-    readonly s3PollerRoleArn: OdmdCrossRefProducer<RagDocumentProcessingEnver>;
-    readonly documentProcessorRoleArn: OdmdCrossRefProducer<RagDocumentProcessingEnver>;
 
     wireConsuming() {
-        // Wire consumption from document ingestion service S3 storage resources
         this.documentBucket = new OdmdCrossRefConsumer(
             this, 'doc-bucket',
             this.ingestionEnver.documentStorageResources.documentBucket, {

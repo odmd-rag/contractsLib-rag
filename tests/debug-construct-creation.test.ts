@@ -8,7 +8,6 @@ describe('Debug Construct Creation', () => {
     test('debug individual service creation', () => {
         const app = new App();
         
-        // Test each step individually to find where duplication occurs
         console.log('1. Creating App...');
         
         console.log('2. About to import RagContracts...');
@@ -16,7 +15,6 @@ describe('Debug Construct Creation', () => {
         
         console.log('3. About to create RagContracts...');
         
-        // This should show us exactly where the duplicate construct is created
         const ragContracts = new RagContracts(app);
         
         console.log('4. RagContracts created successfully');

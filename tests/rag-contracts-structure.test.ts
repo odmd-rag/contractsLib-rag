@@ -2,7 +2,6 @@ import { App } from 'aws-cdk-lib';
 import { RagContracts } from '../src';
 
 describe('RagContracts Structure', () => {
-    // Setup environment variables and create instance
     process.env.CDK_CLI_VERSION = '2.0.0';
     process.env.CDK_DEFAULT_REGION = 'us-east-1';
     process.env.CDK_DEFAULT_ACCOUNT = '123456789012';
@@ -55,37 +54,30 @@ describe('RagContracts Structure', () => {
     });
 
     test('should have dev and prod environments for all services', () => {
-        // Check document ingestion service
         expect(ragContracts.ragDocumentIngestionBuild.dev).toBeDefined();
         expect(ragContracts.ragDocumentIngestionBuild.prod).toBeDefined();
         expect(ragContracts.ragDocumentIngestionBuild.envers).toHaveLength(2);
         
-        // Check document processing service
         expect(ragContracts.ragDocumentProcessingBuild.dev).toBeDefined();
         expect(ragContracts.ragDocumentProcessingBuild.prod).toBeDefined();
         expect(ragContracts.ragDocumentProcessingBuild.envers).toHaveLength(2);
         
-        // Check embedding service
         expect(ragContracts.ragEmbeddingBuild.dev).toBeDefined();
         expect(ragContracts.ragEmbeddingBuild.prod).toBeDefined();
         expect(ragContracts.ragEmbeddingBuild.envers).toHaveLength(2);
         
-        // Check vector storage service
         expect(ragContracts.ragVectorStorageBuild.dev).toBeDefined();
         expect(ragContracts.ragVectorStorageBuild.prod).toBeDefined();
         expect(ragContracts.ragVectorStorageBuild.envers).toHaveLength(2);
         
-        // Check knowledge retrieval service
         expect(ragContracts.ragKnowledgeRetrievalBuild.dev).toBeDefined();
         expect(ragContracts.ragKnowledgeRetrievalBuild.prod).toBeDefined();
         expect(ragContracts.ragKnowledgeRetrievalBuild.envers).toHaveLength(2);
         
-        // Check generation service
         expect(ragContracts.ragGenerationBuild.dev).toBeDefined();
         expect(ragContracts.ragGenerationBuild.prod).toBeDefined();
         expect(ragContracts.ragGenerationBuild.envers).toHaveLength(2);
         
-        // Check user-auth service
         expect(ragContracts.userAuth!.envers).toHaveLength(1);
         expect(ragContracts.userAuth!.envers[0].targetRevision.value).toBe('odmd-rag');
     });

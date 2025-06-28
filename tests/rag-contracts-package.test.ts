@@ -3,7 +3,6 @@ import { RagContracts } from '../src';
 import * as packageJson from '../package.json';
 
 describe('RagContracts Package Consistency', () => {
-    // Setup environment variables and create instance
     process.env.CDK_CLI_VERSION = '2.0.0';
     process.env.CDK_DEFAULT_REGION = 'us-east-1';
     process.env.CDK_DEFAULT_ACCOUNT = '123456789012';
@@ -14,11 +13,9 @@ describe('RagContracts Package Consistency', () => {
     test('should have packageName and pkgOrg consistent with package.json', () => {
         const buildContracts = ragContracts.contractsLibBuild;
         
-        // Extract package name and organization from package.json
         const expectedPackageName = packageJson.name;
         const expectedPkgOrg = packageJson.name.split('/')[0];
         
-        // Check that OdmdBuildContractsLib instance matches package.json
         expect(buildContracts.packageName).toBe(expectedPackageName);
         expect(buildContracts.pkgOrg).toBe(expectedPkgOrg);
     });
@@ -34,14 +31,11 @@ describe('RagContracts Package Consistency', () => {
         const dependencies = packageJson.dependencies;
         const devDependencies = packageJson.devDependencies;
         
-        // Check CDK dependencies
         expect(dependencies['aws-cdk-lib']).toBeDefined();
         expect(dependencies['constructs']).toBeDefined();
         
-        // Check OndemandEnv dependencies
         expect(dependencies['@ondemandenv/contracts-lib-base']).toBeDefined();
         
-        // Check TypeScript dependencies
         expect(devDependencies['typescript']).toBeDefined();
         expect(devDependencies['@types/node']).toBeDefined();
     });

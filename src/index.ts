@@ -1,13 +1,9 @@
-// Export main contracts class
 export { RagContracts } from './rag-contracts';
 
-// Export types
 export type { AccountsRag, GithubReposRag } from './types';
 
-// Export contracts build
 export { OdmdBuildContractsRag } from './contracts-build';
 
-// Export all service builds and envers
 export {
     RagDocumentIngestionBuild,
     RagDocumentIngestionEnver

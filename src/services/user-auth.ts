@@ -38,13 +38,9 @@ export class RagUserAuthEnver extends OdmdEnverUserAuth {
     readonly homeServerDomainName: OdmdCrossRefProducer<RagUserAuthEnver>;
 
     wireConsuming() {
-        // Wire consuming from other RAG services that need authentication
-        // Each service enver produces callback/logout URLs, and this single user-auth enver consumes them
 
-        // Get contracts reference
         const ragContracts = this.owner.contracts as RagContracts;
 
-        // Wire callbacks from document ingestion service (dev and prod envers)
         ragContracts.ragDocumentIngestionBuild.envers.forEach((e, index) => {
             this.callbackUrls.push(new OdmdCrossRefConsumer(this, `doc-ing-callback-${index}`, e.authCallbackUrl, {
                 trigger: 'directly',
@@ -56,7 +52,6 @@ export class RagUserAuthEnver extends OdmdEnverUserAuth {
             }));
         });
 
-        // Note: Knowledge retrieval and generation services will be added when they implement callback/logout URLs
     }
 
     getRevStackNames(): Array<string> {

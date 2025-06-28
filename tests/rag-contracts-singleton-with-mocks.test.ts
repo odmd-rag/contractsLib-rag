@@ -1,6 +1,5 @@
 import { RagContracts } from '../src';
 
-// Mock AWS CDK to avoid construct conflicts
 jest.mock('aws-cdk-lib', () => {
     return {
         App: jest.fn().mockImplementation(() => ({
@@ -14,7 +13,6 @@ jest.mock('aws-cdk-lib', () => {
     };
 });
 
-// Mock OndemandEnv base classes to avoid construct creation
 jest.mock('@ondemandenv/contracts-lib-base', () => {
     const actualBase = jest.requireActual('@ondemandenv/contracts-lib-base');
     return {
@@ -48,7 +46,6 @@ jest.mock('@ondemandenv/contracts-lib-base', () => {
                     children: [],
                     metadata: []
                 };
-                // Add to parent's builds if applicable
                 if (scope && scope.odmdBuilds) {
                     scope.odmdBuilds.push(this);
                 }
@@ -134,21 +131,17 @@ jest.mock('@ondemandenv/contracts-lib-base', () => {
 });
 
 describe('RagContracts Singleton (With Mocks)', () => {
-    // Setup environment variables
     process.env.CDK_CLI_VERSION = '2.0.0';
     process.env.CDK_DEFAULT_REGION = 'us-east-1';
     process.env.CDK_DEFAULT_ACCOUNT = '123456789012';
 
     beforeEach(() => {
-        // Clear singleton state
         (RagContracts as any)._inst = undefined;
     });
 
     afterEach(() => {
-        // Clean up singleton
         (RagContracts as any)._inst = undefined;
         
-        // Clear all mocks
         jest.clearAllMocks();
     });
 
@@ -219,7 +212,6 @@ describe('RagContracts Singleton (With Mocks)', () => {
         
         const ragContracts = new RagContracts(app);
         
-        // These should not throw with mocked dependencies
         expect(() => ragContracts.ragUserAuthBuild.wireConsuming()).not.toThrow();
         expect(() => ragContracts.ragDocumentIngestionBuild.wireConsuming()).not.toThrow();
     });

@@ -20,15 +20,16 @@ export class DocumentStorageResourceProducer extends OdmdCrossRefProducer<RagDoc
     constructor(owner: RagDocumentIngestionEnver, id: string) {
         super(owner, id, {
             children: [
-                {pathPart: 'document-bucket'},        // S3 bucket for uploaded documents
-                {pathPart: 'quarantine-bucket'}       // S3 bucket for quarantined documents
+                {pathPart: 'document-bucket'},
+                {pathPart: 'quarantine-bucket'}
             ]
         });
     }
 
     /**
-     * S3 bucket containing uploaded documents with timestamp-hash keys
-     * This is the primary contract interface for downstream services to poll
+     * S3 bucket for document storage with status metadata
+     * Contains uploaded documents with processing status tracked in object metadata
+     * Triggers S3 event notifications for downstream processing services
      */
     public get documentBucket() {
         return this.children![0]!
@@ -50,31 +51,25 @@ export class RagDocumentIngestionEnver extends OdmdEnverCdk {
     constructor(owner: RagDocumentIngestionBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
 
-        // Initialize S3 storage resources for downstream services to poll
         this.documentStorageResources = new DocumentStorageResourceProducer(this, 'doc-storage-resources');
 
-        // Initialize auth callback URLs for user-auth service to consume
         this.authCallbackUrl = new OdmdCrossRefProducer(this, 'auth-callback-url');
         this.logoutUrl = new OdmdCrossRefProducer(this, 'logout-url');
     }
 
     readonly documentStorageResources: DocumentStorageResourceProducer;
 
-    // Auth callback URLs produced for user-auth service to consume
     readonly authCallbackUrl: OdmdCrossRefProducer<RagDocumentIngestionEnver>;
     readonly logoutUrl: OdmdCrossRefProducer<RagDocumentIngestionEnver>;
 
-    // Consuming user-auth identity provider details for document authentication (single references since one auth enver)
     authProviderClientId!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
     authProviderName!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
 
-    // Consuming status API endpoints from other services for web UI configuration
     processingStatusApiEndpoint!: OdmdCrossRefConsumer<this, RagDocumentProcessingEnver>;
     embeddingStatusApiEndpoint!: OdmdCrossRefConsumer<this, RagEmbeddingEnver>;
     vectorStorageStatusApiEndpoint!: OdmdCrossRefConsumer<this, RagVectorStorageEnver>;
 
     wireConsuming() {
-        // Wire consumption from user-auth service for authentication
         const ragContracts = this.owner.contracts as RagContracts;
         const userAuthEnver = ragContracts.userAuth!.envers[0] as RagUserAuthEnver
 

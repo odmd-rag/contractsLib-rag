@@ -18,13 +18,13 @@ export class VectorSearchProxyApiProducer extends OdmdCrossRefProducer<RagKnowle
         super(owner, id, {
             children: [
                 {
-                    pathPart: 'vector-search-proxy-api',    // API Gateway for vector search proxy
+                    pathPart: 'vector-search-proxy-api',
                     children: [
-                        {pathPart: 'vector-search-endpoint'},       // Main vector search endpoint
-                        {pathPart: 'health-check-endpoint'},        // Health check endpoint
-                        {pathPart: 'search-request-schema'},        // Schema for search requests
-                        {pathPart: 'search-response-schema'},       // Schema for search responses
-                        {pathPart: 'home-server-config'}            // Home server configuration
+                        {pathPart: 'vector-search-endpoint'},
+                        {pathPart: 'health-check-endpoint'},
+                        {pathPart: 'search-request-schema'},
+                        {pathPart: 'search-response-schema'},
+                        {pathPart: 'home-server-config'}
                     ]
                 }
             ]
@@ -93,19 +93,15 @@ export class RagKnowledgeRetrievalEnver extends OdmdEnverCdk {
     ) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
         
-        // Produce vector search proxy API for Generation Service
         this.vectorSearchProxyApi = new VectorSearchProxyApiProducer(this, 'vector-search-proxy-api');
     }
 
-    // Auth provider subscriptions
     authProviderClientId!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
     authProviderName!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
     
-    // Home server domain from user-auth service
     homeServerDomain!: OdmdCrossRefConsumer<this, RagUserAuthEnver>;
 
     wireConsuming() {
-        // Wire consumption from user-auth service for authentication
         const ragContracts = this.owner.contracts as RagContracts;
         const userAuthEnver = ragContracts.userAuth!.envers[0] as RagUserAuthEnver
         
@@ -124,15 +120,7 @@ export class RagKnowledgeRetrievalEnver extends OdmdEnverCdk {
      * Provides vector search endpoints that forward to home server
      */
     readonly vectorSearchProxyApi: VectorSearchProxyApiProducer;
-    
-    /**
-     * Get the home vector server endpoint for this environment
-     * Note: This will be available via homeServerDomain.getSharedValue() in CDK stack
-     */
-    getHomeVectorEndpoint(): string {
-        // This method is deprecated - use homeServerDomain.getSharedValue() instead
-        return 'https://localhost:3000';
-    }
+
 }
 
 /**
@@ -162,13 +150,11 @@ export class RagKnowledgeRetrievalBuild extends OdmdBuild<OdmdEnverCdk> {
     }
 
     protected initializeEnvers(): void {
-        // Development environment - home server domain from user-auth contract
         this._dev = new RagKnowledgeRetrievalEnver(this,
             this.contracts.accounts.workspace1, 'us-east-2',
             new SRC_Rev_REF('b', 'dev')
         );
 
-        // Production environment - home server domain from user-auth contract
         this._prod = new RagKnowledgeRetrievalEnver(this,
             this.contracts.accounts.workspace2, 'us-east-2',
             new SRC_Rev_REF('b', 'main')

@@ -18,7 +18,7 @@ export class EmbeddingStorageProducer extends OdmdCrossRefProducer<RagEmbeddingE
     constructor(owner: RagEmbeddingEnver, id: string) {
         super(owner, id, {
             children: [
-                {pathPart: 'embeddings-bucket'}           // S3 bucket for embedding JSON files with status metadata
+                {pathPart: 'embeddings-bucket'}
             ]
         });
     }
@@ -27,7 +27,7 @@ export class EmbeddingStorageProducer extends OdmdCrossRefProducer<RagEmbeddingE
      * S3 bucket for embedding files with status metadata
      * Contains JSON files with generated embeddings, metadata, and status in object metadata
      * Status tracking uses metadata keys: 'processing-status', 'placeholder', 'chunk-id', etc.
-     * Consumed by vector storage service via S3 notifications or polling
+     * Consumed by vector storage service via S3 event notifications
      */
     public get embeddingsBucket() {
         return this.children![0]!
@@ -43,8 +43,8 @@ export class EmbeddingStatusApiProducer extends OdmdCrossRefProducer<RagEmbeddin
     constructor(owner: RagEmbeddingEnver, id: string) {
         super(owner, id, {
             children: [
-                {pathPart: 'status-api-endpoint'},        // HTTP API Gateway endpoint
-                {pathPart: 'status-response-schema'}      // Schema for status responses
+                {pathPart: 'status-api-endpoint'},
+                {pathPart: 'status-response-schema'}
             ]
         });
     }
@@ -73,19 +73,17 @@ export class EmbeddingStatusApiProducer extends OdmdCrossRefProducer<RagEmbeddin
 export class RagEmbeddingEnver extends OdmdEnverCdk {
     /**
      * S3 bucket subscription to processed document content
-     * Polls S3 bucket for processed content JSON files ready for embedding generation
+     * Receives S3 event notifications for processed content JSON files ready for embedding generation
      */
     readonly processedContentSubscription: OdmdCrossRefConsumer<RagEmbeddingEnver, RagDocumentProcessingEnver>;
     
-    // Consuming user-auth identity provider details for document authentication (single references since one auth enver)
     readonly authProviderClientId: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
     readonly authProviderName: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
 
     constructor(owner: RagEmbeddingBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
 
-        // Subscribe to processed content storage from document processing service
-        const documentProcessingEnver = owner.contracts.ragDocumentProcessingBuild.dev; // Use appropriate env
+        const documentProcessingEnver = owner.contracts.ragDocumentProcessingBuild.dev;
         this.processedContentSubscription = new OdmdCrossRefConsumer(this, 'processedContentSubscription', documentProcessingEnver.processedContentStorage.processedContentBucket);
 
         const userAuthEnver = owner.contracts.userAuth!.envers[0] as RagUserAuthEnver
@@ -93,14 +91,13 @@ export class RagEmbeddingEnver extends OdmdEnverCdk {
 
         this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName);
 
-        // Produce embedding storage for vector storage service
         this.embeddingStorage = new EmbeddingStorageProducer(this, 'embedding-storage');
         this.statusApi = new EmbeddingStatusApiProducer(this, 'status-api');
     }
 
     /**
      * S3 storage producer for embeddings with status metadata
-     * Provides S3 bucket for embeddings that vector storage service polls
+     * Provides S3 bucket for embeddings consumed by vector storage service via S3 event notifications
      * Status tracking embedded in object metadata
      */
     readonly embeddingStorage: EmbeddingStorageProducer;
