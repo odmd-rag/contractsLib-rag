@@ -21,7 +21,9 @@ export class VectorStorageProducer extends OdmdCrossRefProducer<RagVectorStorage
                 {pathPart: 'vector-database-endpoint'},
                 {pathPart: 'vector-index-name'},
                 {pathPart: 'vector-metadata-bucket'},
-                {pathPart: 'vector-backup-bucket'}
+                {pathPart: 'vector-backup-bucket'},
+                {pathPart: 'upsert-request-schema-s3-url'},
+                {pathPart: 'vector-metadata-schema-s3-url'}
             ]
         });
     }
@@ -56,6 +58,24 @@ export class VectorStorageProducer extends OdmdCrossRefProducer<RagVectorStorage
      */
     public get vectorBackupBucket() {
         return this.children![3]!
+    }
+
+    /**
+     * S3 URL to the JSON schema for upsert requests.
+     * Versioned by Git SHA.
+     * e.g., s3://bucket/schemas/upsert-request/upsert-request-abcdef123.json
+     */
+    public get upsertRequestSchemaS3Url() {
+        return this.children![4]!
+    }
+
+    /**
+     * S3 URL to the JSON schema for vector metadata.
+     * Versioned by Git SHA.
+     * e.g., s3://bucket/schemas/vector-metadata/vector-metadata-abcdef123.json
+     */
+    public get vectorMetadataSchemaS3Url() {
+        return this.children![5]!
     }
 }
 

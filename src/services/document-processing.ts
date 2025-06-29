@@ -11,7 +11,8 @@ export class ProcessedContentStorageProducer extends OdmdCrossRefProducer<RagDoc
     constructor(owner: RagDocumentProcessingEnver, id: string) {
         super(owner, id, {
             children: [
-                {pathPart: 'processed-content-bucket'}
+                {pathPart: 'processed-content-bucket'},
+                {pathPart: 'processed-content-schema-s3-url'}
             ]
         });
     }
@@ -24,6 +25,15 @@ export class ProcessedContentStorageProducer extends OdmdCrossRefProducer<RagDoc
      */
     public get processedContentBucket() {
         return this.children![0]!
+    }
+
+    /**
+     * S3 URL to the JSON schema for processed content.
+     * Versioned by Git SHA.
+     * e.g., s3://bucket/schemas/processed-content/processed-content-abcdef123.json
+     */
+    public get processedContentSchemaS3Url() {
+        return this.children![1]!
     }
 }
 

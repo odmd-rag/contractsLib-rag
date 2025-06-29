@@ -18,7 +18,8 @@ export class EmbeddingStorageProducer extends OdmdCrossRefProducer<RagEmbeddingE
     constructor(owner: RagEmbeddingEnver, id: string) {
         super(owner, id, {
             children: [
-                {pathPart: 'embeddings-bucket'}
+                {pathPart: 'embeddings-bucket'},
+                {pathPart: 'embedding-status-schema-s3-url'}
             ]
         });
     }
@@ -31,6 +32,15 @@ export class EmbeddingStorageProducer extends OdmdCrossRefProducer<RagEmbeddingE
      */
     public get embeddingsBucket() {
         return this.children![0]!
+    }
+
+    /**
+     * S3 URL to the JSON schema for embedding status.
+     * Versioned by Git SHA.
+     * e.g., s3://bucket/schemas/embedding-status/embedding-status-abcdef123.json
+     */
+    public get embeddingStatusSchemaS3Url() {
+        return this.children![1]!
     }
 }
 
