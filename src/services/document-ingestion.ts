@@ -21,7 +21,8 @@ export class DocumentStorageResourceProducer extends OdmdCrossRefProducer<RagDoc
         super(owner, id, {
             children: [
                 {pathPart: 'document-bucket'},
-                {pathPart: 'quarantine-bucket'}
+                {pathPart: 'quarantine-bucket'},
+                {pathPart: 'document-metadata-schema-s3-url'}
             ]
         });
     }
@@ -41,6 +42,15 @@ export class DocumentStorageResourceProducer extends OdmdCrossRefProducer<RagDoc
      */
     public get quarantineBucket() {
         return this.children![1]!
+    }
+
+    /**
+     * S3 URL to the JSON schema for document metadata.
+     * Versioned by Git SHA.
+     * e.g., s3://bucket/schemas/document-metadata/document-metadata-abcdef123.json
+     */
+    public get documentMetadataSchemaS3Url() {
+        return this.children![2]!
     }
 }
 
