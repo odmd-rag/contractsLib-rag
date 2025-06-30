@@ -87,6 +87,12 @@ export class RagEmbeddingEnver extends OdmdEnverCdk {
      */
     readonly processedContentSubscription: OdmdCrossRefConsumer<RagEmbeddingEnver, RagDocumentProcessingEnver>;
     
+    /**
+     * S3 URL subscription to the processed content schema
+     * Used at runtime to validate incoming data against the producer's contract
+     */
+    readonly processedContentSchemaS3Url: OdmdCrossRefConsumer<RagEmbeddingEnver, RagDocumentProcessingEnver>;
+
     readonly authProviderClientId: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
     readonly authProviderName: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
 
@@ -95,6 +101,7 @@ export class RagEmbeddingEnver extends OdmdEnverCdk {
 
         const documentProcessingEnver = owner.contracts.ragDocumentProcessingBuild.dev;
         this.processedContentSubscription = new OdmdCrossRefConsumer(this, 'processedContentSubscription', documentProcessingEnver.processedContentStorage.processedContentBucket);
+        this.processedContentSchemaS3Url = new OdmdCrossRefConsumer(this, 'processedContentSchemaS3Url', documentProcessingEnver.processedContentStorage.processedContentSchemaS3Url);
 
         const userAuthEnver = owner.contracts.userAuth!.envers[0] as RagUserAuthEnver
         this.authProviderClientId = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderClientId.node.id, userAuthEnver.idProviderClientId);

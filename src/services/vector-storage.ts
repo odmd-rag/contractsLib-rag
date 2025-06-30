@@ -127,6 +127,12 @@ export class RagVectorStorageEnver extends OdmdEnverCdk {
      */
     embeddingSubscription!: OdmdCrossRefConsumer<RagVectorStorageEnver, RagEmbeddingEnver>;
 
+    /**
+     * S3 URL subscription to the embedding status schema
+     * Used at runtime to validate incoming data from the embedding service
+     */
+    embeddingStatusSchemaS3Url!: OdmdCrossRefConsumer<RagVectorStorageEnver, RagEmbeddingEnver>;
+
     authProviderClientId!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
     authProviderName!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
     
@@ -137,6 +143,11 @@ export class RagVectorStorageEnver extends OdmdEnverCdk {
         this.embeddingSubscription = new OdmdCrossRefConsumer(
             this, 'embedding-subscription',
             embeddingEnver.embeddingStorage.embeddingsBucket
+        );
+
+        this.embeddingStatusSchemaS3Url = new OdmdCrossRefConsumer(
+            this, 'embeddingStatusSchemaS3Url',
+            embeddingEnver.embeddingStorage.embeddingStatusSchemaS3Url
         );
 
         const ragContracts = this.owner.contracts as RagContracts;
