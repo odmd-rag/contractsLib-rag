@@ -1,6 +1,6 @@
 {
   "name": "@odmd-rag/contracts-lib-rag",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "description": "RAG System Contracts Library for OndemandEnv Platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -23,8 +23,8 @@
     "prepare": "npm run build"
   },
   "dependencies": {
-    "@ondemandenv/contracts-lib-base": "0.0.72",
-    "aws-cdk-lib": "2.200.1",
+    "@ondemandenv/contracts-lib-base": "0.0.73",
+    "aws-cdk-lib": "2.203.1",
     "constructs": "^10.0.0",
     "source-map-support": "^0.5.21"
   },

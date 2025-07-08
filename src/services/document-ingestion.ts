@@ -22,7 +22,7 @@ export class DocumentStorageResourceProducer extends OdmdCrossRefProducer<RagDoc
             children: [
                 {pathPart: 'document-bucket'},
                 {pathPart: 'quarantine-bucket'},
-                {pathPart: 'document-metadata-schema-s3-url'}
+                {pathPart: 'document-metadata-schema-s3-url', s3artifact: true}
             ]
         });
     }

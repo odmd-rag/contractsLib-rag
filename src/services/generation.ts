@@ -5,8 +5,8 @@ import {
     OdmdCrossRefConsumer,
     OdmdCrossRefProducer, OdmdEnverUserAuth
 } from "@ondemandenv/contracts-lib-base";
-import type { RagContracts } from "../rag-contracts";
-import { RagUserAuthEnver } from "./user-auth";
+import type {RagContracts} from "../rag-contracts";
+import {RagUserAuthEnver} from "./user-auth";
 
 /**
  * Generation API Producer (API Gateway + Lambda + WebUI)
@@ -19,10 +19,10 @@ export class GenerationApiProducer extends OdmdCrossRefProducer<RagGenerationEnv
                 {
                     pathPart: 'generation-api',
                     children: [
-                        {pathPart: 'generation-request-schema'},
-                        {pathPart: 'generation-response-schema'},
-                        {pathPart: 'conversation-schema'},
-                        {pathPart: 'feedback-schema'}
+                        {pathPart: 'generation-request-schema', s3artifact: true},
+                        {pathPart: 'generation-response-schema', s3artifact: true},
+                        {pathPart: 'conversation-schema', s3artifact: true},
+                        {pathPart: 'feedback-schema', s3artifact: true},
                     ]
                 },
                 {pathPart: 'web-ui-cloudfront-url'},
@@ -94,7 +94,7 @@ export class GenerationApiProducer extends OdmdCrossRefProducer<RagGenerationEnv
 export class RagGenerationEnver extends OdmdEnverCdk {
     constructor(owner: RagGenerationBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
-        
+
         this.generationApi = new GenerationApiProducer(this, 'generation-api');
     }
 
@@ -112,7 +112,7 @@ export class RagGenerationEnver extends OdmdEnverCdk {
     wireConsuming() {
         const ragContracts = this.owner.contracts as RagContracts;
         const knowledgeRetrievalEnver = ragContracts.ragKnowledgeRetrievalBuild.dev;
-        
+
         this.vectorSearchProxySubscription = new OdmdCrossRefConsumer(
             this, 'vector-search-proxy-subscription',
             knowledgeRetrievalEnver.vectorSearchProxyApi.vectorSearchEndpoint, {
@@ -138,12 +138,12 @@ export class RagGenerationEnver extends OdmdEnverCdk {
         );
 
         const userAuthEnver = ragContracts.userAuth!.envers[0] as RagUserAuthEnver
-        
+
         this.authProviderClientId = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderClientId.node.id, userAuthEnver.idProviderClientId);
-        
+
         this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName);
     }
-    
+
     /**
      * Generation API and web UI producer
      * Provides generation endpoints and web interface for client consumption

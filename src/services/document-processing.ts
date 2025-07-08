@@ -12,7 +12,7 @@ export class ProcessedContentStorageProducer extends OdmdCrossRefProducer<RagDoc
         super(owner, id, {
             children: [
                 {pathPart: 'processed-content-bucket'},
-                {pathPart: 'processed-content-schema-s3-url'}
+                {pathPart: 'processed-content-schema-s3-url', s3artifact: true}
             ]
         });
     }

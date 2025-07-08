@@ -19,7 +19,7 @@ export class EmbeddingStorageProducer extends OdmdCrossRefProducer<RagEmbeddingE
         super(owner, id, {
             children: [
                 {pathPart: 'embeddings-bucket'},
-                {pathPart: 'embedding-status-schema-s3-url'}
+                {pathPart: 'embedding-status-schema-s3-url', s3artifact: true}
             ]
         });
     }
