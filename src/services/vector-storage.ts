@@ -11,37 +11,29 @@ import { RagUserAuthEnver } from "./user-auth";
 import {RagEmbeddingEnver} from "./embedding";
 
 /**
- * Vector Storage Resources (S3 Buckets + Vector Database)
- * Provides vector database and storage for vector search service consumption
+ Vector database endpoint
+ Connection string/endpoint for the vector database
  */
 export class VectorStorageProducer extends OdmdCrossRefProducer<RagVectorStorageEnver> {
-    constructor(owner: RagVectorStorageEnver, id: string) {
-        super(owner, id, {
+    constructor(owner: RagVectorStorageEnver) {
+        super(owner, 'db-endpoint', {
             children: [
-                {pathPart: 'vector-database-endpoint'},
-                {pathPart: 'vector-index-name'},
-                {pathPart: 'vector-metadata-bucket'},
-                {pathPart: 'vector-backup-bucket'},
+                {pathPart: 'index-name'},
+                {pathPart: 'metadata-bucket'},
+                {pathPart: 'backup-bucket'},
                 {pathPart: 'upsert-request-schema-s3-url'},
                 {pathPart: 'vector-metadata-schema-s3-url'}
             ]
         });
     }
 
-    /**
-     * Vector database endpoint
-     * Connection string/endpoint for the vector database
-     */
-    public get vectorDatabaseEndpoint() {
-        return this.children![0]!
-    }
 
     /**
      * Vector index name
      * Name of the vector index/collection in the database
      */
     public get vectorIndexName() {
-        return this.children![1]!
+        return this.children![0]!
     }
 
     /**
@@ -49,7 +41,7 @@ export class VectorStorageProducer extends OdmdCrossRefProducer<RagVectorStorage
      * Contains metadata about stored vectors and indexing status
      */
     public get vectorMetadataBucket() {
-        return this.children![2]!
+        return this.children![1]!
     }
 
     /**
@@ -57,7 +49,7 @@ export class VectorStorageProducer extends OdmdCrossRefProducer<RagVectorStorage
      * Contains periodic backups of the vector database
      */
     public get vectorBackupBucket() {
-        return this.children![3]!
+        return this.children![2]!
     }
 
     /**
@@ -66,7 +58,7 @@ export class VectorStorageProducer extends OdmdCrossRefProducer<RagVectorStorage
      * e.g., s3://bucket/schemas/upsert-request/upsert-request-abcdef123.json
      */
     public get upsertRequestSchemaS3Url() {
-        return this.children![4]!
+        return this.children![3]!
     }
 
     /**
@@ -75,30 +67,21 @@ export class VectorStorageProducer extends OdmdCrossRefProducer<RagVectorStorage
      * e.g., s3://bucket/schemas/vector-metadata/vector-metadata-abcdef123.json
      */
     public get vectorMetadataSchemaS3Url() {
-        return this.children![5]!
+        return this.children![4]!
     }
 }
 
 /**
- * Vector Storage Status API Producer
- * Provides HTTP API endpoints for vector storage status tracking
+ HTTP API Gateway endpoint for vector storage status
+ Pattern: https://{enverId}.ragVectorStorage.{domain}/status/{docId}
  */
 export class VectorStorageStatusApiProducer extends OdmdCrossRefProducer<RagVectorStorageEnver> {
-    constructor(owner: RagVectorStorageEnver, id: string) {
-        super(owner, id, {
+    constructor(owner: RagVectorStorageEnver ) {
+        super(owner, 'status-api', {
             children: [
-                {pathPart: 'status-api-endpoint'},
-                {pathPart: 'status-response-schema'}
+                {pathPart: 'schema'}
             ]
         });
-    }
-
-    /**
-     * HTTP API Gateway endpoint for vector storage status
-     * Pattern: https://{enverId}.ragVectorStorage.{domain}/status/{docId}
-     */
-    public get statusApiEndpoint() {
-        return this.children![0]!
     }
 
     /**
@@ -106,7 +89,7 @@ export class VectorStorageStatusApiProducer extends OdmdCrossRefProducer<RagVect
      * Defines the data structure for vector storage status responses
      */
     public get statusResponseSchema() {
-        return this.children![1]!
+        return this.children![0]!
     }
 }
 
@@ -117,8 +100,8 @@ export class RagVectorStorageEnver extends OdmdEnverCdk {
     constructor(owner: RagVectorStorageBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
 
-        this.vectorStorage = new VectorStorageProducer(this, 'vector-storage');
-        this.statusApi = new VectorStorageStatusApiProducer(this, 'status-api');
+        this.vectorStorage = new VectorStorageProducer(this);
+        this.statusApi = new VectorStorageStatusApiProducer(this);
     }
 
     /**
@@ -142,7 +125,7 @@ export class RagVectorStorageEnver extends OdmdEnverCdk {
         const embeddingEnver = (this.owner as RagVectorStorageBuild).contracts.ragEmbeddingBuild.dev;
         this.embeddingSubscription = new OdmdCrossRefConsumer(
             this, 'embedding-subscription',
-            embeddingEnver.embeddingStorage.embeddingsBucket
+            embeddingEnver.embeddingStorage
         );
 
         this.embeddingStatusSchemaS3Url = new OdmdCrossRefConsumer(

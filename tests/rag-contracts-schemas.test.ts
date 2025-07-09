@@ -28,7 +28,7 @@ describe('RagContracts Schema Contracts', () => {
         const embeddingDev = ragContracts.ragEmbeddingBuild.dev;
         const eventProducer = embeddingDev.embeddingStorage;
         
-        expect(eventProducer.embeddingsBucket).toBeDefined();
+        expect(eventProducer).toBeDefined();
         
     });
 
@@ -36,7 +36,7 @@ describe('RagContracts Schema Contracts', () => {
         const vectorStorageDev = ragContracts.ragVectorStorageBuild.dev;
         const apiProducer = vectorStorageDev.vectorStorage;
         
-        expect(apiProducer.vectorDatabaseEndpoint).toBeDefined();
+        expect(apiProducer).toBeDefined();
         
         expect(apiProducer.vectorBackupBucket).toBeDefined();
         expect(apiProducer.vectorIndexName).toBeDefined();

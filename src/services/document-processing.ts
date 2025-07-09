@@ -85,7 +85,6 @@ export class RagDocumentProcessingEnver extends OdmdEnverCdk {
     }
 
     documentBucket!: OdmdCrossRefConsumer<this, RagDocumentIngestionEnver>;
-    quarantineBucket!: OdmdCrossRefConsumer<this, RagDocumentIngestionEnver>;
     documentMetadataSchemaS3Url!: OdmdCrossRefConsumer<this, RagDocumentIngestionEnver>;
 
     readonly processedContentStorage: ProcessedContentStorageProducer;
@@ -95,17 +94,12 @@ export class RagDocumentProcessingEnver extends OdmdEnverCdk {
     wireConsuming() {
         this.documentBucket = new OdmdCrossRefConsumer(
             this, 'doc-bucket',
-            this.ingestionEnver.documentStorageResources.documentBucket
-        );
-
-        this.quarantineBucket = new OdmdCrossRefConsumer(
-            this, 'quarantine-bucket',
-            this.ingestionEnver.documentStorageResources.quarantineBucket,
+            this.ingestionEnver.documentStorageResources
         );
 
         this.documentMetadataSchemaS3Url = new OdmdCrossRefConsumer(
             this, 'doc-metadata-schema',
-            this.ingestionEnver.documentStorageResources.documentMetadataSchemaS3Url,
+            this.ingestionEnver.documentStorageResources.docMetadataSchemaS3Url,
         );
     }
 

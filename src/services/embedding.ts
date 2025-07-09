@@ -10,62 +10,41 @@ import {RagUserAuthEnver} from "./user-auth";
 import {RagDocumentProcessingEnver} from "./document-processing";
 
 /**
- * Embedding Storage Resources (S3 Buckets)
- * Provides S3 bucket for embeddings with status-in-metadata pattern
- * Status tracking is now embedded in object metadata instead of separate bucket
+ S3 bucket for embedding files with status metadata
+ Contains JSON files with generated embeddings, metadata, and status in object metadata
+ Status tracking uses metadata keys: 'processing-status', 'placeholder', 'chunk-id', etc.
+ Consumed by vector storage service via S3 event notifications
  */
 export class EmbeddingStorageProducer extends OdmdCrossRefProducer<RagEmbeddingEnver> {
-    constructor(owner: RagEmbeddingEnver, id: string) {
-        super(owner, id, {
+    constructor(owner: RagEmbeddingEnver) {
+        super(owner, 'store', {
             children: [
-                {pathPart: 'embeddings-bucket'},
-                {pathPart: 'embedding-status-schema-s3-url', s3artifact: true}
+                {pathPart: 'schema', s3artifact: true}
             ]
         });
-    }
-
-    /**
-     * S3 bucket for embedding files with status metadata
-     * Contains JSON files with generated embeddings, metadata, and status in object metadata
-     * Status tracking uses metadata keys: 'processing-status', 'placeholder', 'chunk-id', etc.
-     * Consumed by vector storage service via S3 event notifications
-     */
-    public get embeddingsBucket() {
-        return this.children![0]!
     }
 
     /**
      * S3 URL to the JSON schema for embedding status.
      * Versioned by Git SHA.
-     * e.g., s3://bucket/schemas/embedding-status/embedding-status-abcdef123.json
      */
     public get embeddingStatusSchemaS3Url() {
-        return this.children![1]!
+        return this.children![0]!
     }
 }
 
 /**
- * Embedding Service Status API Producer
- * Provides HTTP API endpoints for embedding status tracking
- * Status is retrieved from S3 object metadata instead of separate status bucket
+ HTTP API Gateway endpoint for embedding status
+ Pattern: https://{enverId}.ragEmbedding.{domain}/status/{docId}
+ Status retrieved from S3 object metadata
  */
 export class EmbeddingStatusApiProducer extends OdmdCrossRefProducer<RagEmbeddingEnver> {
-    constructor(owner: RagEmbeddingEnver, id: string) {
-        super(owner, id, {
+    constructor(owner: RagEmbeddingEnver) {
+        super(owner, 'status-api', {
             children: [
-                {pathPart: 'status-api-endpoint'},
-                {pathPart: 'status-response-schema'}
+                {pathPart: 'schema'}
             ]
         });
-    }
-
-    /**
-     * HTTP API Gateway endpoint for embedding status
-     * Pattern: https://{enverId}.ragEmbedding.{domain}/status/{docId}
-     * Status retrieved from S3 object metadata
-     */
-    public get statusApiEndpoint() {
-        return this.children![0]!
     }
 
     /**
@@ -73,7 +52,7 @@ export class EmbeddingStatusApiProducer extends OdmdCrossRefProducer<RagEmbeddin
      * Defines the data structure for embedding status responses from S3 metadata
      */
     public get statusResponseSchema() {
-        return this.children![1]!
+        return this.children![0]!
     }
 }
 
@@ -108,8 +87,8 @@ export class RagEmbeddingEnver extends OdmdEnverCdk {
 
         this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName);
 
-        this.embeddingStorage = new EmbeddingStorageProducer(this, 'embedding-storage');
-        this.statusApi = new EmbeddingStatusApiProducer(this, 'status-api');
+        this.embeddingStorage = new EmbeddingStorageProducer(this);
+        this.statusApi = new EmbeddingStatusApiProducer(this);
     }
 
     /**

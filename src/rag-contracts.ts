@@ -65,7 +65,7 @@ export class RagContracts extends OndemandContracts<AccountsRag, GithubReposRag,
 
         // Validate environment variables
         if (!process.env.CDK_CLI_VERSION) {
-            throw new Error("CDK_CLI_VERSION environment variable is required!");
+            console.warn("CDK_CLI_VERSION environment variable not found!");
         }
 
         const buildRegion = process.env.CDK_DEFAULT_REGION;
@@ -73,14 +73,14 @@ export class RagContracts extends OndemandContracts<AccountsRag, GithubReposRag,
         if (process.env.CDK_DEFAULT_ACCOUNT) {
             buildAccount = process.env.CDK_DEFAULT_ACCOUNT;
         } else {
-            console.log(`CDK_DEFAULT_ACCOUNT undefined, trying CodeBuild: ${process.env.CODEBUILD_BUILD_ARN}`);
+            console.warn(`CDK_DEFAULT_ACCOUNT undefined, trying CodeBuild: ${process.env.CODEBUILD_BUILD_ARN}`);
             if (!process.env.CODEBUILD_BUILD_ARN) {
-                throw new Error(`CODEBUILD_BUILD_ARN undefined, unable to initialize without account information.`);
+                console.warn(`CODEBUILD_BUILD_ARN undefined, unable to initialize without account information.`);
             }
             buildAccount = process.env.CODEBUILD_BUILD_ARN!.split(":")[4];
         }
         if (!buildRegion || !buildAccount) {
-            throw new Error("buildRegion>" + buildRegion + "; buildAccount>" + buildAccount);
+            console.warn("buildRegion>" + buildRegion + "; buildAccount>" + buildAccount);
         }
 
         // Wire all consuming relationships

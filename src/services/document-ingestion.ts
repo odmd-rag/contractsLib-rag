@@ -8,31 +8,23 @@ import {
 } from '@ondemandenv/contracts-lib-base';
 import {RagContracts} from "../rag-contracts";
 import {RagUserAuthEnver} from "./user-auth";
-import {RagDocumentProcessingEnver} from "./document-processing";
-import {RagEmbeddingEnver} from "./embedding";
-import {RagVectorStorageEnver} from "./vector-storage";
 
 /**
- * Document Storage Resource Producer (S3)
- * Provides access to the document storage bucket for downstream processing services
+ S3 bucket for document storage with status metadata
  */
 export class DocumentStorageResourceProducer extends OdmdCrossRefProducer<RagDocumentIngestionEnver> {
-    constructor(owner: RagDocumentIngestionEnver, id: string) {
-        super(owner, id, {
+    constructor(owner: RagDocumentIngestionEnver) {
+        super(owner, 'store', {
             children: [
-                {pathPart: 'document-bucket'},
-                {pathPart: 'quarantine-bucket'},
-                {pathPart: 'document-metadata-schema-s3-url', s3artifact: true}
+                {pathPart: 'schema', s3artifact: true},
+                {pathPart: 'quarantine'}
             ]
         });
     }
-
     /**
-     * S3 bucket for document storage with status metadata
-     * Contains uploaded documents with processing status tracked in object metadata
-     * Triggers S3 event notifications for downstream processing services
+     * S3 URL to the JSON schema for
      */
-    public get documentBucket() {
+    public get docMetadataSchemaS3Url() {
         return this.children![0]!
     }
 
@@ -44,14 +36,6 @@ export class DocumentStorageResourceProducer extends OdmdCrossRefProducer<RagDoc
         return this.children![1]!
     }
 
-    /**
-     * S3 URL to the JSON schema for document metadata.
-     * Versioned by Git SHA.
-     * e.g., s3://bucket/schemas/document-metadata/document-metadata-abcdef123.json
-     */
-    public get documentMetadataSchemaS3Url() {
-        return this.children![2]!
-    }
 }
 
 /**
@@ -61,7 +45,7 @@ export class RagDocumentIngestionEnver extends OdmdEnverCdk {
     constructor(owner: RagDocumentIngestionBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
 
-        this.documentStorageResources = new DocumentStorageResourceProducer(this, 'doc-storage-resources');
+        this.documentStorageResources = new DocumentStorageResourceProducer(this);
 
         this.authCallbackUrl = new OdmdCrossRefProducer(this, 'auth-callback-url');
         this.logoutUrl = new OdmdCrossRefProducer(this, 'logout-url');
@@ -75,9 +59,6 @@ export class RagDocumentIngestionEnver extends OdmdEnverCdk {
     authProviderClientId!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
     authProviderName!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
 
-    processingStatusApiEndpoint!: OdmdCrossRefConsumer<this, RagDocumentProcessingEnver>;
-    embeddingStatusApiEndpoint!: OdmdCrossRefConsumer<this, RagEmbeddingEnver>;
-    vectorStorageStatusApiEndpoint!: OdmdCrossRefConsumer<this, RagVectorStorageEnver>;
 
     wireConsuming() {
         const ragContracts = this.owner.contracts as RagContracts;
@@ -87,32 +68,6 @@ export class RagDocumentIngestionEnver extends OdmdEnverCdk {
 
         this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName);
 
-        const processingEnver = ragContracts.ragDocumentProcessingBuild.envers.find(e =>
-            e.ingestionEnver == this
-        );
-        if (processingEnver)
-            this.processingStatusApiEndpoint = new OdmdCrossRefConsumer(
-                this, 'processing-status-api',
-                processingEnver.statusApi.statusApiEndpoint
-            );
-
-        const embeddingEnver = ragContracts.ragEmbeddingBuild.envers.find(e =>
-            e.processedContentSubscription.producer.owner.ingestionEnver == this
-        );
-        if (embeddingEnver)
-            this.embeddingStatusApiEndpoint = new OdmdCrossRefConsumer(
-                this, 'embedding-status-api',
-                embeddingEnver.statusApi.statusApiEndpoint
-            );
-        const vectorStorageEnver = ragContracts.ragVectorStorageBuild.envers.find(e =>
-            e.embeddingSubscription.producer.owner.processedContentSubscription.producer.owner.ingestionEnver == this
-        );
-
-        if (vectorStorageEnver)
-            this.vectorStorageStatusApiEndpoint = new OdmdCrossRefConsumer(
-                this, 'vector-storage-status-api',
-                vectorStorageEnver.statusApi.statusApiEndpoint
-            );
     }
 
 
