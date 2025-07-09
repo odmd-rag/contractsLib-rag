@@ -8,6 +8,9 @@ import {
 } from '@ondemandenv/contracts-lib-base';
 import {RagContracts} from "../rag-contracts";
 import {RagUserAuthEnver} from "./user-auth";
+import {RagDocumentProcessingEnver} from "./document-processing";
+import {RagEmbeddingEnver} from "./embedding";
+import {RagVectorStorageEnver} from "./vector-storage";
 
 /**
  S3 bucket for document storage with status metadata
@@ -59,6 +62,9 @@ export class RagDocumentIngestionEnver extends OdmdEnverCdk {
     authProviderClientId!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
     authProviderName!: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
 
+    processingStatusApiEndpoint!: OdmdCrossRefConsumer<this, RagDocumentProcessingEnver>;
+    embeddingStatusApiEndpoint!: OdmdCrossRefConsumer<this, RagEmbeddingEnver>;
+    vectorStorageStatusApiEndpoint!: OdmdCrossRefConsumer<this, RagVectorStorageEnver>;
 
     wireConsuming() {
         const ragContracts = this.owner.contracts as RagContracts;
@@ -68,6 +74,32 @@ export class RagDocumentIngestionEnver extends OdmdEnverCdk {
 
         this.authProviderName = new OdmdCrossRefConsumer(this, userAuthEnver.idProviderName.node.id, userAuthEnver.idProviderName);
 
+        const processingEnver = ragContracts.ragDocumentProcessingBuild.envers.find(e =>
+            e.ingestionEnver == this
+        );
+        if (processingEnver)
+            this.processingStatusApiEndpoint = new OdmdCrossRefConsumer(
+                this, 'processing-status-api',
+                processingEnver.statusApi.statusApiEndpoint
+            );
+
+        const embeddingEnver = ragContracts.ragEmbeddingBuild.envers.find(e =>
+            e.processedContentSubscription.producer.owner.ingestionEnver == this
+        );
+        if (embeddingEnver)
+            this.embeddingStatusApiEndpoint = new OdmdCrossRefConsumer(
+                this, 'embedding-status-api',
+                embeddingEnver.statusApi
+            );
+        const vectorStorageEnver = ragContracts.ragVectorStorageBuild.envers.find(e =>
+            e.embeddingSubscription.producer.owner.processedContentSubscription.producer.owner.ingestionEnver == this
+        );
+
+        if (vectorStorageEnver)
+            this.vectorStorageStatusApiEndpoint = new OdmdCrossRefConsumer(
+                this, 'vector-storage-status-api',
+                vectorStorageEnver.statusApi
+            );
     }
 
 
