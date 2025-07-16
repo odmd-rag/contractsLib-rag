@@ -97,8 +97,11 @@ export class VectorStorageStatusApiProducer extends OdmdCrossRefProducer<RagVect
  * RAG Vector Storage Service Enver
  */
 export class RagVectorStorageEnver extends OdmdEnverCdk {
-    constructor(owner: RagVectorStorageBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
+    readonly embeddingEnver: RagEmbeddingEnver;
+    
+    constructor(owner: RagVectorStorageBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF, embeddingEnver: RagEmbeddingEnver) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
+        this.embeddingEnver = embeddingEnver;
 
         this.vectorStorage = new VectorStorageProducer(this);
         this.statusApi = new VectorStorageStatusApiProducer(this);
@@ -122,15 +125,14 @@ export class RagVectorStorageEnver extends OdmdEnverCdk {
     homeServerDomain!: OdmdCrossRefConsumer<this, RagUserAuthEnver>;
 
     wireConsuming() {
-        const embeddingEnver = (this.owner as RagVectorStorageBuild).contracts.ragEmbeddingBuild.dev;
         this.embeddingSubscription = new OdmdCrossRefConsumer(
             this, 'embedding-subscription',
-            embeddingEnver.embeddingStorage
+            this.embeddingEnver.embeddingStorage
         );
 
         this.embeddingStatusSchemaS3Url = new OdmdCrossRefConsumer(
             this, 'embeddingStatusSchemaS3Url',
-            embeddingEnver.embeddingStorage.embeddingStatusSchemaS3Url
+            this.embeddingEnver.embeddingStorage.embeddingStatusSchemaS3Url
         );
 
         const ragContracts = this.owner.contracts as RagContracts;
@@ -185,14 +187,19 @@ export class RagVectorStorageBuild extends OdmdBuild<OdmdEnverCdk> {
     }
 
     protected initializeEnvers(): void {
+        const embeddingDev = this.contracts.ragEmbeddingBuild.dev;
+        const embeddingProd = this.contracts.ragEmbeddingBuild.prod;
+
         this._dev = new RagVectorStorageEnver(this,
             this.contracts.accounts.workspace1, 'us-east-2',
-            new SRC_Rev_REF('b', 'dev')
+            new SRC_Rev_REF('b', 'dev'),
+            embeddingDev
         );
 
         this._prod = new RagVectorStorageEnver(this,
             this.contracts.accounts.workspace2, 'us-east-2',
-            new SRC_Rev_REF('b', 'main')
+            new SRC_Rev_REF('b', 'main'),
+            embeddingProd
         );
 
         this._envers = [this._dev, this._prod];
