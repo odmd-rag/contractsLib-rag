@@ -1,6 +1,6 @@
 {
   "name": "@odmd-rag/contracts-lib-rag",
-  "version": "1.0.27",
+  "version": "1.0.28",
   "description": "RAG System Contracts Library for OndemandEnv Platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

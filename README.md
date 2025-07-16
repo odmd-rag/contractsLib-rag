@@ -2,16 +2,47 @@
 
 This repository contains the OndemandEnv contracts for a serverless RAG (Retrieval-Augmented Generation) system built on AWS. It defines the microservices architecture and cross-service dependencies using the OndemandEnv platform patterns.
 
-## Architecture Overview
+## 🏗️ Architecture Overview
 
-The RAG system consists of 6 core microservices:
+The RAG system consists of 7 core components with **contracts-first architecture**:
 
-1. **Document Ingestion** - Handles document upload and initial processing
-2. **Document Processing** - Parses and preprocesses documents
-3. **Embedding** - Generates vector embeddings from processed content
-4. **Vector Storage** - Manages vector database operations  
-5. **Knowledge Retrieval** - Retrieves relevant context for queries
-6. **Generation** - Generates responses using LLMs and retrieved context
+1. **📤 Document Ingestion** - Document upload, validation, and status tracking
+2. **⚙️ Document Processing** - Document parsing, chunking, and content extraction
+3. **🔗 Embedding** - Vector embedding generation using AWS Bedrock
+4. **💾 Vector Storage** - Vector database operations and management
+5. **🔍 Knowledge Retrieval** - Vector search proxy and query processing
+6. **🤖 Generation** - RAG response generation using LLMs
+7. **🔐 User Authentication** - AWS Cognito-based authentication service
+
+## 🔗 Service Coupling Patterns
+
+### Contract-Based Communication
+All services communicate through typed contracts using `OdmdCrossRefProducer` and `OdmdCrossRefConsumer`:
+
+```typescript
+// Example: Document Processing consumes from Document Ingestion
+this.documentBucket = new OdmdCrossRefConsumer(
+    this, 'doc-bucket',
+    this.ingestionEnver.documentStorageResources
+);
+```
+
+### Producer/Consumer Chain
+Services form a processing pipeline where each service produces outputs for the next:
+
+```
+Document Ingestion → Document Processing → Embedding → Vector Storage
+```
+
+### Status Aggregation
+Document Ingestion service aggregates status from all downstream services:
+
+```typescript
+// Wires status APIs from all downstream services
+this.processingStatusApiEndpoint = new OdmdCrossRefConsumer(/*...*/);
+this.embeddingStatusApiEndpoint = new OdmdCrossRefConsumer(/*...*/);
+this.vectorStorageStatusApiEndpoint = new OdmdCrossRefConsumer(/*...*/);
+```
 
 ## Project Structure
 
@@ -89,54 +120,93 @@ contractsLib-rag/
   - Prompt engineering and context injection
   - Response post-processing
 
-## Data Flow
+## 🔄 Data Flow and Communication Patterns
 
-### Main Pipeline (OndemandEnv Services)
-```
-Document Upload (User)
-    ↓
-Document Ingestion → Document Processing → Embedding → Vector Storage
-    ↓                        ↓                ↓            ↓
-EventBridge            S3 Processed      S3 Embeddings  Vector DB
-                       Content Bucket     Bucket         (various backends)
-                                                            ↓
-User Query → Knowledge Retrieval ←←←←←←←←←←←←←←←←←←←←←←←←←←←←
-    ↓
-Generation → Response
-```
-
-### Development Tools (Separate)
-```
-Home Vector Server (local development only)
-- Standalone Docker container
-- For local testing and development
-- NOT part of the main ondemandenv.dev pipeline
-- Can be integrated via Vector Storage Service for dev environments
+### Main Processing Pipeline
+```mermaid
+graph LR
+    A[Document Upload] --> B[Document Processing]
+    B --> C[Embedding Generation]
+    C --> D[Vector Storage]
+    D --> E[Knowledge Retrieval]
+    E --> F[Response Generation]
+    
+    G[User Auth] --> A
+    G --> E
+    G --> F
 ```
 
-## Key Architectural Principles
+### Cross-Service Communication Methods
+1. **S3 Events** → SQS → Lambda processing (primary data flow)
+2. **HTTP APIs** → Status checking and real-time queries
+3. **EventBridge** → Async notifications and event routing
+4. **Contract Resolution** → Deployment-time dependency wiring
 
-### Service Communication
-- **S3-based**: Services communicate through S3 buckets for reliable data transfer
-- **Event-driven**: EventBridge for loose coupling and async processing
-- **Contract-based**: All dependencies defined through contractsLib contracts
-- **No Direct Dependencies**: Services don't directly call each other
-
-### Data Storage Pattern
+### Data Storage and Schema Evolution
 ```
-Document Ingestion → S3 Raw Documents
-       ↓
-Document Processing → S3 Processed Content (JSON chunks)
-       ↓  
-Embedding Service → S3 Embeddings (JSON vectors)
-       ↓
-Vector Storage → Vector Database (various backends)
+Document Ingestion → S3 Raw Documents + Metadata
+       ↓ (S3 Events)
+Document Processing → S3 Processed Content (JSON chunks) + Schema
+       ↓ (S3 Events)
+Embedding Service → S3 Embeddings (JSON vectors) + Schema
+       ↓ (S3 Events)
+Vector Storage → Vector Database + S3 Metadata
 ```
 
-### Authentication
-- **Centralized**: User Auth service provides JWT tokens
-- **Consumed**: All services with status APIs consume auth contracts
-- **Hierarchical**: JWT authentication for web UIs and API access
+### Schema-Based Contracts
+- **Versioned Schemas**: Git SHA-based schema evolution
+- **Runtime Validation**: Zod-based input/output validation
+- **S3 Artifact Storage**: Centralized schema distribution
+- **Contract Compatibility**: Backward-compatible schema updates
+
+## 🏠 Hybrid Architecture
+
+### OndemandEnv Cloud Services
+- **Production-ready** serverless microservices
+- **AWS-managed** infrastructure with auto-scaling
+- **Contract-based** service boundaries
+- **Multi-account** deployment (dev/prod isolation)
+
+### Home Vector Server (Development)
+- **Local Docker container** for development
+- **Weaviate-based** vector database
+- **Proxy integration** via Knowledge Retrieval Service
+- **Development-only** - not part of production pipeline
+
+## 🔧 Deployment and Contract Management
+
+### Manual Deployment Workflow
+The system requires coordinated deployment due to contract dependencies:
+
+1. **contractsLib-rag** changes → Manual build and publish to GitHub packages
+2. **Service updates** → Update `package.json` to new contractsLib version
+3. **Service deployment** → Each service rebuilds with updated contracts
+4. **Contract resolution** → Automatic dependency wiring at deployment time
+
+### Contract Resolution Process
+```typescript
+// In RagContracts constructor - wiring order matters
+this.ragDocumentProcessingBuild.wireConsuming();
+this.ragVectorStorageBuild.wireConsuming();
+this.ragKnowledgeRetrievalBuild.wireConsuming();
+// Document ingestion wired last - consumes from all others
+this.ragDocumentIngestionBuild.wireConsuming();
+```
+
+## 🔐 Authentication and Security
+
+### Centralized Authentication
+- **AWS Cognito** User Pool integration
+- **Google OAuth** primary authentication method
+- **JWT tokens** for API access
+- **Group-based authorization** ("odmd-rag-uploader" group)
+
+### Security Patterns
+- **Least privilege** IAM policies between services
+- **VPC isolation** for network security
+- **S3 encryption** for data at rest
+- **Schema validation** at service boundaries
+- **CORS configuration** for web UI security
 
 ## Environment Management
 
@@ -170,7 +240,14 @@ The system uses EventBridge for loose coupling between services:
 - NOT part of the ondemandenv.dev architecture
 - Can be integrated via Vector Storage Service configuration
 
-## Getting Started
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+
+- AWS CLI configured
+- Access to ondemandenv.dev platform
+
+### Installation
 
 1. **Install dependencies**:
    ```bash
@@ -187,20 +264,55 @@ The system uses EventBridge for loose coupling between services:
    npm test
    ```
 
-4. **Example usage**:
-   ```typescript
-   import { App } from 'aws-cdk-lib';
-   import { RagContracts } from '@contractslib/rag-contracts';
+### Usage Examples
 
-   const app = new App();
-   const ragContracts = new RagContracts(app);
-   
-   // Access service builds
-   const docIngestion = ragContracts.ragDocumentIngestionBuild;
-   const docProcessing = ragContracts.ragDocumentProcessingBuild;
-   const embedding = ragContracts.ragEmbeddingBuild;
-   const vectorStorage = ragContracts.ragVectorStorageBuild;
-   ```
+#### Basic Contract Instantiation
+```typescript
+import { App } from 'aws-cdk-lib';
+import { RagContracts } from '@odmd-rag/contracts-lib-rag';
+
+const app = new App();
+const ragContracts = new RagContracts(app);
+
+// Access service builds
+const docIngestion = ragContracts.ragDocumentIngestionBuild;
+const docProcessing = ragContracts.ragDocumentProcessingBuild;
+const embedding = ragContracts.ragEmbeddingBuild;
+const vectorStorage = ragContracts.ragVectorStorageBuild;
+```
+
+#### Cross-Service Contract Consumption
+```typescript
+// In a service that consumes from Document Ingestion
+export class MyServiceEnver extends OdmdEnverCdk {
+    documentBucket!: OdmdCrossRefConsumer<this, RagDocumentIngestionEnver>;
+    
+    wireConsuming() {
+        const ingestionEnver = this.contracts.ragDocumentIngestionBuild.dev;
+        this.documentBucket = new OdmdCrossRefConsumer(
+            this, 'doc-bucket',
+            ingestionEnver.documentStorageResources
+        );
+    }
+}
+```
+
+#### Using Shared Values at Runtime
+```typescript
+// In Lambda handler or service logic
+import { getSharedValue } from '@ondemandenv/contracts-lib-base';
+
+const bucketName = await getSharedValue(this.myEnver.documentBucket);
+// Result: "ragIngest-dev-doc-storage-bucket-abc123"
+```
+
+#### Schema-Based Validation
+```typescript
+// Services use generated Zod schemas for validation
+import { documentMetadataSchema } from '../generated/schemas';
+
+const validatedData = documentMetadataSchema.parse(inputData);
+```
 
 ## Service Naming Convention
 

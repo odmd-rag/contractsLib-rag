@@ -75,10 +75,8 @@ export class RagEmbeddingEnver extends OdmdEnverCdk {
     readonly authProviderClientId: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
     readonly authProviderName: OdmdCrossRefConsumer<this, OdmdEnverUserAuth>;
 
-    constructor(owner: RagEmbeddingBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF) {
+    constructor(owner: RagEmbeddingBuild, targetAWSAccountID: string, targetAWSRegion: string, targetRevision: SRC_Rev_REF, documentProcessingEnver: RagDocumentProcessingEnver) {
         super(owner, targetAWSAccountID, targetAWSRegion, targetRevision);
-
-        const documentProcessingEnver = owner.contracts.ragDocumentProcessingBuild.dev;
         this.processedContentSubscription = new OdmdCrossRefConsumer(this, 'processedContentSubscription', documentProcessingEnver.processedContentStorage.processedContentBucket);
         this.processedContentSchemaS3Url = new OdmdCrossRefConsumer(this, 'processedContentSchemaS3Url', documentProcessingEnver.processedContentStorage.processedContentSchemaS3Url);
 
@@ -131,14 +129,19 @@ export class RagEmbeddingBuild extends OdmdBuild<OdmdEnverCdk> {
     }
 
     protected initializeEnvers(): void {
+        const processingDev = this.contracts.ragDocumentProcessingBuild.dev;
+        const processingProd = this.contracts.ragDocumentProcessingBuild.prod;
+
         this._dev = new RagEmbeddingEnver(this,
             this.contracts.accounts.workspace1, 'us-east-2',
-            new SRC_Rev_REF('b', 'dev')
+            new SRC_Rev_REF('b', 'dev'),
+            processingDev
         );
 
         this._prod = new RagEmbeddingEnver(this,
             this.contracts.accounts.workspace2, 'us-east-2',
-            new SRC_Rev_REF('b', 'main')
+            new SRC_Rev_REF('b', 'main'),
+            processingProd
         );
 
         this._envers = [this._dev, this._prod];
