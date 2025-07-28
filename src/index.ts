@@ -37,4 +37,9 @@ export {
 export {
     RagUserAuthBuild,
     RagUserAuthEnver
-} from './services/user-auth'; 
+} from './services/user-auth';
+
+export {
+    SchemaTypeGenerator,
+    deploySchema
+} from './utils'; 
